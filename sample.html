@@ -1,0 +1,60 @@
+<script src='kernel.js'></script>
+
+<script>
+	
+	K.module.define('MyModule', function(router)
+	{
+		var self = this;
+		
+		// Public api
+		self.init = function()
+		{
+			router.listen('custom-event', function(data)
+			{
+				console.log(data);
+			}, self);
+			
+			router.notify({
+				type: 'custom-event',
+				data: 'Hello, I am a custom event.'
+			});
+		}
+	});
+	
+	K.module.define('MyOtherModule', function(router)
+	{
+		var self = this;
+		
+		// Public api
+		self.init = function()
+		{
+			router.listen(['custom-event', 'foo'], function(data)
+			{
+				console.log('DATA: '+data);
+			}, self);
+		}
+	});
+	
+	K.router.define('main', function()
+	{
+		var self = this;
+		
+		self.foo = function()
+		{
+			alert('what up');
+		};
+	});
+	
+	K.extend({
+		foo: 'bar'
+	});
+	
+	K.register('module1', 'MyModule');
+	K.register('module2', 'MyOtherModule');
+	
+	K.start('module2', {placement: 'foo'});
+	K.start('module1', {placement: 'foo'});
+	
+	var stuff = K.getClosure();
+	
+</script>
