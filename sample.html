@@ -18,7 +18,7 @@
 				type: 'custom-event',
 				data: 'Hello, I am a custom event.'
 			});
-		}
+		};
 	});
 	
 	K.module.define('MyOtherModule', function(router)
@@ -46,7 +46,17 @@
 	});
 	
 	K.extend({
-		foo: 'bar'
+		foo: 'bar',
+		onStart: function(instance, config)
+		{
+		    console.log('Instance is starting!');
+		    instance.init();
+		},
+		onStop: function(instance)
+        {
+            console.log('Instance is stopping!');
+            instance.kill();
+        }
 	});
 	
 	K.register('module1', 'MyModule');
@@ -55,6 +65,10 @@
 	K.start('module2', {placement: 'foo'});
 	K.start('module1', {placement: 'foo'});
 	
-	var stuff = K.getClosure();
+	var stuff = K._internals;
+	
+	console.log(stuff);
+	
+	K.stop('module1');
 	
 </script>

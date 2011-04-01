@@ -22,166 +22,164 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 (K = Kernel = function()
 {
-	var self = this, 
-		core, routers = {}, modules = {}, registered = {},
-		listeners = {},
-		defaultRouter = 'main';
+    var self = this, 
+        core, routers = {}, modules = {}, registered = {},
+        listeners = {},
+        defaultRouter = 'main';
 
-	function setDefaultRouter(name)
-	{
-		defaultRouter = name;
-	}
+    function setDefaultRouter(name)
+    {
+        defaultRouter = name;
+    }
 
-	function defineModule(name, Definition)
-	{
-		modules[name] = Definition;
-	}
-	
-	function defineRouter(name, Definition)
-	{
-		// Create instance
-		var r = new Definition();
-		
-		// Add built-in methods - these override any definition methods
-		r.notify = function(bundle)
-		{
-			var i, type = bundle.type, data = bundle.data,
-				l = listeners[type].length;
-			
-			// Cycle through the listeners and call the callbacks
-			for (var i=0; i<l; i+=1)
-			{
-				listeners[type][i].callback(data);
-			}
-		};
-		
-		r.listen = function(type, callback, instance)
-		{
-			if (!instance)
-			{
-				throw 'Module instance required as third parameter to listen.';
-			}
-			
-			var i, tmp = [], id = instance.id;
-			
-			// Cast to array
-			if (type.constructor.toString().indexOf('Array') == -1)
-			{
-				tmp.push(type);
-				type = tmp;
-			}
-			
-			for (i=0; i<type.length; i+=1)
-			{
-				var t = type[i];
-				
-				// Force array 
-				listeners[t] = listeners[t] ? listeners[t] : [];
-				listeners[t].push({callback: callback, id: id});
-			}
-		};
-		
-		routers[name] = r;
-	}
-	
-	function extend(config)
-	{
-		var key;
-		
-		for (key in config)
-		{
-			// Disallow overwriting base methods
-			switch (key)
-			{
-				case 'extend':
-				case 'module':
-				case 'register':
-				case 'router':
-				case 'start':
-				case 'stop':
-				    throw "You can't extend '"+key+"', its an part of kernel's base functionality.";
-					break;
-				
-				default:
-					core[key] = config[key];
-			}
-		}
-	}
-	
-	core = {
-		extend: extend,
-		module: {define: defineModule},
-		router: {define: defineRouter},
-		register: function(id, type, router)
-		{
-			var router = router || defaultRouter;
-			
-			registered[id] = {};
-			registered[id].router = routers[router];
-			registered[id].Defition = modules[type];
-			registered[id].instance = null;
-		},
-		start: function(id, config)
-		{
-			var instance, config = config || registered[id].config;
-			 
-			// Create a module instance
-			instance = new registered[id].Defition(registered[id].router);
-			
-			// Add built-in methods to instance
-			instance.kill = instance.kill || function() {};
-			instance.onStart = instance.onStart || onStart;
-			instance.onStop = instance.onStop || onStop;
-			instance.id = id; 
-			
-			// Save the instance
-			registered[id].instance = instance;
-			
-			// Initialize the module
-			instance.onStart(instance, config);
-		},
-		onStart: function(instance, config)
+    function defineModule(name, Definition)
+    {
+        modules[name] = Definition;
+    }
+    
+    function defineRouter(name, Definition)
+    {
+        // Create instance
+        var r = new Definition();
+        
+        // Add built-in methods - these override any definition methods
+        r.notify = function(bundle)
+        {
+            var i, type = bundle.type, data = bundle.data,
+                l = listeners[type].length;
+            
+            // Cycle through the listeners and call the callbacks
+            for (var i=0; i<l; i+=1)
+            {
+                listeners[type][i].callback(data);
+            }
+        };
+        
+        r.listen = function(type, callback, instance)
+        {
+            if (!instance)
+            {
+                throw 'Module instance required as third parameter to listen.';
+            }
+            
+            var i, tmp = [], id = instance.id;
+            
+            // Cast to array
+            if (type.constructor.toString().indexOf('Array') == -1)
+            {
+                tmp.push(type);
+                type = tmp;
+            }
+            
+            for (i=0; i<type.length; i+=1)
+            {
+                var t = type[i];
+                
+                // Force array 
+                listeners[t] = listeners[t] ? listeners[t] : [];
+                listeners[t].push({callback: callback, id: id});
+            }
+        };
+        
+        routers[name] = r;
+    }
+    
+    function extend(config)
+    {
+        var key;
+        
+        for (key in config)
+        {
+            // Disallow overwriting base methods
+            switch (key)
+            {
+                case 'extend':
+                case 'module':
+                case 'register':
+                case 'router':
+                case 'start':
+                case 'stop':
+                    throw "You can't extend '"+key+"', its an part of kernel's base functionality.";
+                    break;
+                
+                default:
+                    core[key] = config[key];
+            }
+        }
+    }
+    
+    core = {
+        extend: extend,
+        module: {define: defineModule},
+        router: {define: defineRouter},
+        register: function(id, type, router)
+        {
+            var router = router || defaultRouter;
+            
+            registered[id] = {};
+            registered[id].router = routers[router];
+            registered[id].Defition = modules[type];
+            registered[id].instance = null;
+        },
+        start: function(id, config)
+        {
+            var instance, config = config || registered[id].config;
+             
+            // Create a module instance
+            instance = new registered[id].Defition(registered[id].router);
+            
+            // Add built-in methods to instance
+            instance.kill = instance.kill || function() {};
+            instance.id = id; 
+            
+            // Save the instance
+            registered[id].instance = instance;
+            
+            // Initialize the module
+            this.onStart(instance, config);
+        },
+        onStart: function(instance, config)
         {
             instance.init();
         },
-		stop: function(id)
-		{
-			var key, i, listener;
-			
-			// Call the module kill method first
-			registered[id].instance.onStop(registered[id].instance);
-			
-			// Wipe out any listeners
-			for (key in listeners)
-			{
-				// Cycle through each type
-				for (i=0; i<listeners[key].length; i+=1)
-				{
-					listener = listeners[key][i];
-					
-					if (listener.id == id)
-					{
-						
-						listeners[key].splice(i, 1);
-					}
-				}
-			}
-			
-			// Destroy module instance
-			registered[id].instance = null;
-		},
-		onStop: function(instance)
+        stop: function(id)
+        {
+            var key, i, listener;
+            
+            // Call the module kill method first
+            this.onStop(registered[id].instance);
+            
+            // Wipe out any listeners
+            for (key in listeners)
+            {
+                // Cycle through each type
+                for (i=0; i<listeners[key].length; i+=1)
+                {
+                    listener = listeners[key][i];
+                    
+                    if (listener.id == id)
+                    {
+                        
+                        listeners[key].splice(i, 1);
+                    }
+                }
+            }
+            
+            // Destroy module instance
+            registered[id].instance = null;
+        },
+        onStop: function(instance)
         {
             instance.kill();
         },
-		_internals: {
-		    PRIVATE: 'FOR DEBUGGING ONLY',
-			modules: modules,
-			registered: registered,
-			listeners: listeners
-		}
-	};
-	
-	return core;
-	
+        _internals: {
+            PRIVATE: 'FOR DEBUGGING ONLY',
+            modules: modules,
+            registered: registered,
+            listeners: listeners
+        }
+    };
+    
+    return core;
+    
 }());
