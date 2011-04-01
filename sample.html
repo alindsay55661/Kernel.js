@@ -32,6 +32,9 @@
 			{
 				console.log('DATA: '+data);
 			}, self);
+			
+			// Kill itself for fun
+			router.toggleModule(self.id);
 		}
 	});
 	
@@ -39,9 +42,16 @@
 	{
 		var self = this;
 		
-		self.foo = function()
+		self.toggleModule = function(id, config)
 		{
-			alert('what up');
+		    if (K.getModule(id))
+		    {
+		        K.stop(id);
+		    }
+		    else
+		    {
+		        K.start(id, config);
+		    }
 		};
 	});
 	
@@ -68,7 +78,5 @@
 	var stuff = K._internals;
 	
 	console.log(stuff);
-	
-	K.stop('module1');
 	
 </script>

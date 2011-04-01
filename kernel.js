@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay
+Copyright (c) 2011 Alan Lindsay - version 0.8
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -94,6 +94,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             switch (key)
             {
                 case 'extend':
+                case 'getModule':
+                case 'getRouter':
                 case 'module':
                 case 'register':
                 case 'router':
@@ -111,6 +113,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     core = {
         extend: extend,
         module: {define: defineModule},
+        getModule: function(id)
+        {
+            return registered[id].instance;
+        },
+        getRouter: function(id)
+        {
+            return routers[id];
+        },
         router: {define: defineRouter},
         register: function(id, type, router)
         {
