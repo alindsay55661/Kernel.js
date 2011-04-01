@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8
+Copyright (c) 2011 Alan Lindsay - version 0.8.2
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -133,7 +133,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         },
         start: function(id, config)
         {
-            var instance, config = config || registered[id].config;
+            var instance;
              
             // Create a module instance
             instance = new registered[id].Defition(registered[id].router);
@@ -141,6 +141,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             // Add built-in methods to instance
             instance.kill = instance.kill || function() {};
             instance.id = id; 
+            
+            // Merge config into instance
+            if (config)
+            {
+                for (key in config)
+                {
+                    // Allow overridding of everything but 'id' including 'init' and 'kill'
+                    if (key != 'id')
+                    {
+                        instance[key] = config[key];
+                    }
+                    else
+                    {
+                        throw "Cannot override instance id!";
+                    }
+                }
+            }
             
             // Save the instance
             registered[id].instance = instance;
