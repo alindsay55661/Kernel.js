@@ -84,16 +84,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 		routers[name] = r;
 	}
 	
-	function onStart(instance, config)
-	{
-		instance.init();
-	}
-	
-	function onStop(instance)
-	{
-		instance.kill();
-	}
-	
 	function extend(config)
 	{
 		var key;
@@ -104,9 +94,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 			switch (key)
 			{
 				case 'extend':
+				case 'module':
 				case 'register':
+				case 'router':
 				case 'start':
 				case 'stop':
+				    throw "You can't extend '"+key+"', its an part of kernel's base functionality.";
 					break;
 				
 				default:
@@ -147,6 +140,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 			// Initialize the module
 			instance.onStart(instance, config);
 		},
+		onStart: function(instance, config)
+        {
+            instance.init();
+        },
 		stop: function(id)
 		{
 			var key, i, listener;
@@ -173,13 +170,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 			// Destroy module instance
 			registered[id].instance = null;
 		},
-		getClosure: function()
-		{
-			return {
-				modules: modules,
-				registered: registered,
-				listeners: listeners
-			}
+		onStop: function(instance)
+        {
+            instance.kill();
+        },
+		_internals: {
+		    PRIVATE: 'FOR DEBUGGING ONLY',
+			modules: modules,
+			registered: registered,
+			listeners: listeners
 		}
 	};
 	
