@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.2
+Copyright (c) 2011 Alan Lindsay - version 0.8.3
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -46,12 +46,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         r.notify = function(bundle)
         {
             var i, type = bundle.type, data = bundle.data,
-                l = listeners[type].length;
+                l = listeners[type], length;
             
             // Cycle through the listeners and call the callbacks
-            for (var i=0; i<l; i+=1)
+            if (l)
             {
-                listeners[type][i].callback(data);
+                length = l.length;
+                
+                for (i=0; i<length; i+=1)
+                {
+                    listeners[type][i].callback(data);
+                }
             }
         };
         
