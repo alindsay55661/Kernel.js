@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.3
+Copyright (c) 2011 Alan Lindsay - version 0.8.4
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -88,6 +88,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         
         routers[name] = r;
     }
+    
+    // Define an empty router
+    defineRouter('main', function(){});
     
     function extend(config)
     {

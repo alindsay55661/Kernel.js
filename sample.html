@@ -34,26 +34,26 @@
 			}, self);
 			
 			// Kill itself for fun
-			router.toggleModule(self.id);
+			//router.toggleModule(self.id);
 		}
 	});
 	
-	K.router.define('main', function()
-	{
-		var self = this;
-		
-		self.toggleModule = function(id, config)
-		{
-		    if (K.getModule(id))
-		    {
-		        K.stop(id);
-		    }
-		    else
-		    {
-		        K.start(id, config);
-		    }
-		};
-	});
+	// K.router.define('main', function()
+	// {
+	// 	var self = this;
+	// 	
+	// 	self.toggleModule = function(id, config)
+	// 	{
+	// 	    if (K.getModule(id))
+	// 	    {
+	// 	        K.stop(id);
+	// 	    }
+	// 	    else
+	// 	    {
+	// 	        K.start(id, config);
+	// 	    }
+	// 	};
+	// });
 	
 	K.extend({
 		foo: 'bar',
