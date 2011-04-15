@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.5
+Copyright (c) 2011 Alan Lindsay - version 0.8.6
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -20,65 +20,57 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-(Kernel = function()
-{
+(Kernel = function() {
+    
     var self = this, 
         core, routers = {}, modules = {}, registered = {},
         listeners = {},
         defaultRouter = 'main';
 
-    function setDefaultRouter(name)
-    {
+    function setDefaultRouter(name) {
         defaultRouter = name;
     }
 
-    function defineModule(name, Definition)
-    {
+    function defineModule(name, Definition) {
         modules[name] = Definition;
     }
     
-    function defineRouter(name, Definition)
-    {
+    function defineRouter(name, Definition) {
         // Create instance
         var r = new Definition();
         
         // Add built-in methods - these override any definition methods
-        r.notify = function(bundle)
-        {
+        r.notify = function(bundle) {
+            
             var i, type = bundle.type, data = bundle.data,
-                l = listeners[type], length;
+                l = listeners[type], size;
             
             // Cycle through the listeners and call the callbacks
-            if (l)
-            {
-                length = l.length;
+            if (l) {
                 
-                for (i=0; i<length; i+=1)
-                {
+                for (i=0,size=l.length; i<size; i+=1) {
                     listeners[type][i].callback(data);
                 }
             }
         };
         
-        r.listen = function(type, callback, instance)
-        {
-            if (!instance)
-            {
+        r.listen = function(type, callback, instance) {
+            
+            if (!instance) {
                 throw 'Module instance required as third parameter to listen.';
             }
             
-            var i, tmp = [], id = instance.id;
+            var i, size, t, tmp = [], id = instance.id;
             
             // Cast to array
-            if (type.constructor.toString().indexOf('Array') === -1)
-            {
+            if (type.constructor.toString().indexOf('Array') === -1) {
                 tmp.push(type);
                 type = tmp;
             }
             
-            for (i=0; i<type.length; i+=1)
-            {
-                var t = type[i];
+            for (i=0,size=type.length; i<size; i+=1) {
+                
+                t = type[i];
                 
                 // Force array 
                 listeners[t] = listeners[t] ? listeners[t] : [];
@@ -92,15 +84,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // Define an empty router
     defineRouter('main', function(){});
     
-    function extend(config)
-    {
+    function extend(config) {
+        
         var key;
         
-        for (key in config)
-        {
+        for (key in config) {
+            
             // Disallow overwriting base methods
-            switch (key)
-            {
+            switch (key) {
                 case 'extend':
                 case 'module':
                 case 'register':
@@ -120,20 +111,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         extend: extend,
         module: {
             define: defineModule,
-            get: function(id)
-            {
+            get: function(id) {
                 return registered[id].instance;
             }
         },
         router: {
             define: defineRouter,
-            get: function(id)
-            {
+            get: function(id) {
                 return routers[id];
             }
         },
-        register: function(id, type, router)
-        {
+        register: function(id, type, router) {
+            
             var router = router || defaultRouter;
             
             registered[id] = {};
@@ -141,9 +130,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             registered[id].Defition = modules[type];
             registered[id].instance = null;
         },
-        start: function(id, config)
-        {
-            var instance;
+        start: function(id, config) {
+            
+            var instance, key;
              
             // Create a module instance
             instance = new registered[id].Defition(registered[id].router);
@@ -153,17 +142,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             instance.id = id; 
             
             // Merge config into instance
-            if (config)
-            {
-                for (key in config)
-                {
+            if (config) {
+                for (key in config) {
                     // Allow overridding of everything but 'id' including 'init' and 'kill'
-                    if (key != 'id')
-                    {
+                    if (key != 'id') {
                         instance[key] = config[key];
                     }
-                    else
-                    {
+                    else {
                         throw "Cannot override instance id!";
                     }
                 }
@@ -175,27 +160,25 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             // Initialize the module
             this.onStart(instance, config);
         },
-        onStart: function(instance, config)
-        {
+        onStart: function(instance, config) {
             instance.init();
         },
-        stop: function(id)
-        {
-            var key, i, listener;
+        stop: function(id) {
+            
+            var key, i, size, listener;
             
             // Call the module kill method first
             this.onStop(registered[id].instance);
             
             // Wipe out any listeners
-            for (key in listeners)
-            {
+            for (key in listeners) {
+                
                 // Cycle through each type
-                for (i=0; i<listeners[key].length; i+=1)
-                {
+                for (i=0,size=listeners[key].length; i<size; i+=1) {
+                    
                     listener = listeners[key][i];
                     
-                    if (listener.id === id)
-                    {
+                    if (listener.id === id) {
                         listeners[key].splice(i, 1);
                     }
                 }
@@ -204,8 +187,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             // Destroy module instance
             registered[id].instance = null;
         },
-        onStop: function(instance)
-        {
+        onStop: function(instance) {
             instance.kill();
         },
         _internals: {
