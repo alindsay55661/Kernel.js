@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.4
+Copyright (c) 2011 Alan Lindsay - version 0.8.5
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -20,7 +20,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-(K = Kernel = function()
+(Kernel = function()
 {
     var self = this, 
         core, routers = {}, modules = {}, registered = {},
@@ -70,7 +70,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var i, tmp = [], id = instance.id;
             
             // Cast to array
-            if (type.constructor.toString().indexOf('Array') == -1)
+            if (type.constructor.toString().indexOf('Array') === -1)
             {
                 tmp.push(type);
                 type = tmp;
@@ -102,8 +102,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             switch (key)
             {
                 case 'extend':
-                case 'getModule':
-                case 'getRouter':
                 case 'module':
                 case 'register':
                 case 'router':
@@ -120,16 +118,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     
     core = {
         extend: extend,
-        module: {define: defineModule},
-        getModule: function(id)
-        {
-            return registered[id].instance;
+        module: {
+            define: defineModule,
+            get: function(id)
+            {
+                return registered[id].instance;
+            }
         },
-        getRouter: function(id)
-        {
-            return routers[id];
+        router: {
+            define: defineRouter,
+            get: function(id)
+            {
+                return routers[id];
+            }
         },
-        router: {define: defineRouter},
         register: function(id, type, router)
         {
             var router = router || defaultRouter;
@@ -192,9 +194,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 {
                     listener = listeners[key][i];
                     
-                    if (listener.id == id)
+                    if (listener.id === id)
                     {
-                        
                         listeners[key].splice(i, 1);
                     }
                 }
