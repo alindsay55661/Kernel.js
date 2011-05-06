@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.6
+Copyright (c) 2011 Alan Lindsay - version 0.8.7
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -158,9 +158,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             registered[id].instance = instance;
             
             // Initialize the module
-            this.onStart(instance, config);
+            this.onStart(instance);
         },
-        onStart: function(instance, config) {
+        onStart: function(instance) {
             instance.init();
         },
         stop: function(id) {
