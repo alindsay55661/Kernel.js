@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.8
+Copyright (c) 2011 Alan Lindsay - version 0.8.9
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -23,24 +23,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 (Kernel = function() {
     
     var self = this, 
-        core, routers = {}, modules = {}, registered = {},
+        core, hubs = {}, modules = {}, registered = {},
         listeners = {},
-        defaultRouter = 'main';
+        defaultHub = 'main';
 
-    function setDefaultRouter(name) {
-        defaultRouter = name;
+    function setDefaultHub(name) {
+        defaultHub = name;
     }
 
     function defineModule(name, Definition) {
         modules[name] = Definition;
     }
     
-    function defineRouter(name, Definition) {
+    function defineHub(name, Definition) {
         // Create instance
-        var r = new Definition();
+        var h = new Definition();
         
         // Add built-in methods - these override any definition methods
-        r.notify = function(bundle) {
+        h.notify = function(bundle) {
             
             var i, type = bundle.type, data = bundle.data,
                 l = listeners[type], size;
@@ -54,7 +54,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             }
         };
         
-        r.listen = function(type, callback, instance) {
+        h.listen = function(type, callback, instance) {
             
             if (!instance) {
                 throw 'Module instance required as third parameter to listen.';
@@ -78,11 +78,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             }
         };
         
-        routers[name] = r;
+        hubs[name] = h;
     }
     
     // Define an empty router
-    defineRouter('main', function(){});
+    defineHub('main', function(){});
     
     function extend(config) {
         
@@ -95,7 +95,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 case 'extend':
                 case 'module':
                 case 'register':
-                case 'router':
+                case 'hub':
                 case 'start':
                 case 'stop':
                     throw "You can't extend '"+key+"', its an part of kernel's base functionality.";
@@ -133,18 +133,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 return registered[id].instance;
             }
         },
-        router: {
-            define: defineRouter,
+        hub: {
+            define: defineHub,
             get: function(id) {
-                return routers[id];
+                return hubs[id];
             }
         },
-        register: function(id, type, router) {
+        register: function(id, type, hub) {
             
-            var router = router || defaultRouter;
+            var hub = hub || defaultHub;
             
             registered[id] = {};
-            registered[id].router = routers[router];
+            registered[id].hub = hubs[hub];
             registered[id].Defition = modules[type];
             registered[id].instance = null;
         },
@@ -153,7 +153,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var instance, key;
              
             // Create a module instance
-            instance = new registered[id].Defition(registered[id].router);
+            instance = new registered[id].Defition(registered[id].hub);
             
             // Add built-in methods to instance
             instance.kill = instance.kill || function() {};
