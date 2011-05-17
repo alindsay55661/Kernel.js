@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.7
+Copyright (c) 2011 Alan Lindsay - version 0.8.8
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -107,10 +107,28 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         }
     }
     
+    function moduleExtend(instance, api) {
+        
+        var key;
+        
+        for (key in api) {
+            // Allow overridding of everything but 'id'
+            if (key != 'id') {
+                instance[key] = api[key];
+            }
+            else {
+                throw "Cannot override instance id!";
+            }
+        }
+    }
+    
     core = {
         extend: extend,
         module: {
             define: defineModule,
+            extend: function(instance, api) {
+                moduleExtend(instance, api);
+            },
             get: function(id) {
                 return registered[id].instance;
             }
@@ -142,17 +160,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             instance.id = id; 
             
             // Merge config into instance
-            if (config) {
-                for (key in config) {
-                    // Allow overridding of everything but 'id' including 'init' and 'kill'
-                    if (key != 'id') {
-                        instance[key] = config[key];
-                    }
-                    else {
-                        throw "Cannot override instance id!";
-                    }
-                }
-            }
+            if (config) { moduleExtend(instance, config); }
             
             // Save the instance
             registered[id].instance = instance;
