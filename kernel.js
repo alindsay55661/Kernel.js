@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9
+Copyright (c) 2011 Alan Lindsay - version 0.9.1
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -89,7 +89,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         
         for (key in obj2) {
             
-            if (obj1._internals.type === 'Kernel') {
+            if (obj1._internals && obj1._internals.type === 'Kernel') {
                 
                 // Disallow overwriting base methods
                 switch (key) {
@@ -106,7 +106,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         // Assignment below
                 }
             }
-            else if (obj1._internals.type === 'module') {
+            else if (obj1._internals && obj1._internals.type === 'module') {
                 
                 // Disallow overridding module ids
                 if (key === 'id') {
@@ -247,7 +247,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9',
+        version: '0.9.1',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
