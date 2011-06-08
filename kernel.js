@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.8.9
+Copyright (c) 2011 Alan Lindsay - version 0.9
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -40,10 +40,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         var h = new Definition();
         
         // Add built-in methods - these override any definition methods
-        h.notify = function(bundle) {
+        h.broadcast = function(type, data) {
             
-            var i, type = bundle.type, data = bundle.data,
-                l = listeners[type], size;
+            var i, l = listeners[type], size;
             
             // Cycle through the listeners and call the callbacks
             if (l) {
@@ -57,7 +56,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         h.listen = function(type, callback, instance) {
             
             if (!instance) {
-                throw 'Module instance required as third parameter to listen.';
+                throw 'Listen requires the module instance as the 3rd parameter.';
             }
             
             var i, size, t, tmp = [], id = instance.id;
@@ -84,51 +83,86 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // Define an empty router
     defineHub('main', function(){});
     
-    function extend(config) {
+    function extend(obj1, obj2) {
         
         var key;
         
-        for (key in config) {
+        for (key in obj2) {
             
-            // Disallow overwriting base methods
-            switch (key) {
-                case 'extend':
-                case 'module':
-                case 'register':
-                case 'hub':
-                case 'start':
-                case 'stop':
-                    throw "You can't extend '"+key+"', its an part of kernel's base functionality.";
-                    break;
+            if (obj1._internals.type === 'Kernel') {
                 
-                default:
-                    core[key] = config[key];
+                // Disallow overwriting base methods
+                switch (key) {
+                    case 'extend':
+                    case 'module':
+                    case 'register':
+                    case 'hub':
+                    case 'start':
+                    case 'stop':
+                        throw "You can't extend '"+key+"', it's part of kernel's base functionality.";
+                        break;
+                    
+                    default:
+                        // Assignment below
+                }
             }
+            else if (obj1._internals.type === 'module') {
+                
+                // Disallow overridding module ids
+                if (key === 'id') {
+                    
+                    throw "You can't overwrite an module instance id.";
+                }
+            }
+            
+            // Make the assignment
+            obj1[key] = obj2[key];
         }
     }
     
-    function moduleExtend(instance, api) {
+    function registerModule(id, type, hub) {
         
-        var key;
+        var hub = hub || defaultHub;
+            
+        registered[id] = {};
+        registered[id].hub = hubs[hub];
+        registered[id].Defition = modules[type];
+        registered[id].instance = null;
         
-        for (key in api) {
-            // Allow overridding of everything but 'id'
-            if (key != 'id') {
-                instance[key] = api[key];
-            }
-            else {
-                throw "Cannot override instance id!";
-            }
+    }
+    
+    function startModule(id, config, core) {
+        
+        var instance, key;
+             
+        // Create a module instance
+        try {
+            instance = new registered[id].Defition(registered[id].hub);
         }
+        catch (e) {
+            throw "Missing or broken module definition - did you forget to include the file? ";
+        }
+        
+        // Add built-in methods to instance
+        instance._internals = {};
+        instance._internals.type = 'module';
+        instance.kill = instance.kill || function() {};
+        instance.id = id;
+        
+        // Merge config into instance
+        if (config) { extend(instance, config); }
+        
+        // Save the instance
+        registered[id].instance = instance;
+        
+        // Initialize the module
+        core.onStart(instance);
     }
     
     core = {
         extend: extend,
         module: {
             define: defineModule,
-            extend: function(instance, api) {
-                moduleExtend(instance, api);
-            },
             get: function(id) {
                 return registered[id].instance;
             }
@@ -141,32 +175,47 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         },
         register: function(id, type, hub) {
             
-            var hub = hub || defaultHub;
+            var i;
             
-            registered[id] = {};
-            registered[id].hub = hubs[hub];
-            registered[id].Defition = modules[type];
-            registered[id].instance = null;
+            // Check to see if an array is being used
+            if (id.constructor.toString().indexOf('Array') === -1) {
+                
+                registerModule(id, type, hub);
+            }
+            else {
+                // Register all the modules
+                for (i=0; i<id.length; i+=1) {
+                    
+                    registerModule(id[i].id, id[i].type, id[i].hub);
+                }
+            }
         },
         start: function(id, config) {
             
-            var instance, key;
-             
-            // Create a module instance
-            instance = new registered[id].Defition(registered[id].hub);
+            var i;
             
-            // Add built-in methods to instance
-            instance.kill = instance.kill || function() {};
-            instance.id = id; 
+            // Check to see if an array is being used
+            if (id.constructor.toString().indexOf('Array') === -1) {
+                
+                startModule(id, config, this);
+                
+            }
+            else {
+                // Start all the modules
+                for (i=0; i<id.length; i+=1) {
+                    
+                    startModule(id[i].id, id[i].config, this);
+                }
+            }
+        },
+        startAll: function() {
             
-            // Merge config into instance
-            if (config) { moduleExtend(instance, config); }
+            var key;
             
-            // Save the instance
-            registered[id].instance = instance;
-            
-            // Initialize the module
-            this.onStart(instance);
+            for (key in registered) {
+                
+                startModule(key, null, this);
+            }
         },
         onStart: function(instance) {
             instance.init();
@@ -198,8 +247,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
+        version: '0.9',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
+            type: 'Kernel',
+            hubs: hubs,
             modules: modules,
             registered: registered,
             listeners: listeners
