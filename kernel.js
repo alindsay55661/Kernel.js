@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9.2
+Copyright (c) 2011 Alan Lindsay - version 0.9.3
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -137,7 +137,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
              
         // Create a module instance
         try {
-            instance = new registered[id].Defition(registered[id].hub);
+            instance = new registered[id].Definition(registered[id].hub);
         }
         catch (e) {
             throw "Missing or broken module definition ["+id+"] - did you forget to include the file? ";
@@ -247,7 +247,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9.2',
+        version: '0.9.3',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
