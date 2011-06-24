@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9.6
+Copyright (c) 2011 Alan Lindsay - version 0.9.7
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -151,7 +151,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         registered[id] = {};
         registered[id].hub = hubs[hub];
         registered[id].Definition = modules[type];
-        registered[id].instance = null;
+        registered[id].started = false;
         
         // Create a module instance
         try {
@@ -179,6 +179,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         // Merge config into instance
         if (config) { extend(registered[id].instance, config, true); }
         
+        // Flag the module
+        registered[id].started = true;
+        
         // Initialize the module
         core.onStart(registered[id].instance);
     }
@@ -189,6 +192,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             define: defineModule,
             get: function(id) {
                 return registered[id].instance;
+            },
+            isStarted: function(id) {
+                return registered[id].started;
             }
         },
         hub: {
@@ -265,13 +271,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 }
             }
             
-            // Destroy module instance
-            registered[id].instance = null;
+            // Flag the module
+            registered[id].started = false;
+        
         },
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9.6',
+        version: '0.9.7',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
