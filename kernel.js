@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9.5
+Copyright (c) 2011 Alan Lindsay - version 0.9.6
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -143,21 +143,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return obj1;
     }
     
-    function registerModule(id, type, hub) {
+    // This will create a module instance - but it won't call its init method.
+    function registerModule(id, type, hub, config) {
         
-        var hub = hub || defaultHub;
+        var hub = hub || defaultHub, instance;
             
         registered[id] = {};
         registered[id].hub = hubs[hub];
         registered[id].Definition = modules[type];
         registered[id].instance = null;
         
-    }
-    
-    function startModule(id, config, core) {
-        
-        var instance, key;
-             
         // Create a module instance
         try {
             instance = new registered[id].Definition(registered[id].hub);
@@ -177,9 +172,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         
         // Save the instance
         registered[id].instance = instance;
+    }
+    
+    function startModule(id, config, core) {
+        
+        // Merge config into instance
+        if (config) { extend(registered[id].instance, config, true); }
         
         // Initialize the module
-        core.onStart(instance);
+        core.onStart(registered[id].instance);
     }
     
     core = {
@@ -196,20 +197,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 return hubs[id];
             }
         },
-        register: function(id, type, hub) {
+        register: function(id, type, hub, config) {
             
             var i;
             
             // Check to see if an array is being used
             if (id.constructor.toString().indexOf('Array') === -1) {
                 
-                registerModule(id, type, hub);
+                registerModule(id, type, hub, config);
             }
             else {
                 // Register all the modules
                 for (i=0; i<id.length; i+=1) {
                     
-                    registerModule(id[i].id, id[i].type, id[i].hub);
+                    registerModule(id[i].id, id[i].type, id[i].hub, id[i].config);
                 }
             }
         },
@@ -270,7 +271,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9.5',
+        version: '0.9.6',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
