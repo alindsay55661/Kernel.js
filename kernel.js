@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9.8
+Copyright (c) 2011 Alan Lindsay - version 0.9.9
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -40,7 +40,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         var h = new Definition();
         
         // Add built-in methods - these override any definition methods
-        h.broadcast = function(type, data) {
+        h.broadcast = function(type, data, callback) {
             
             var i, l = listeners[type], size;
             
@@ -51,6 +51,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     listeners[type][i].callback(data);
                 }
             }
+            
+            // Handle callback if provided
+            if (callback) callback();
         };
         
         h.listen = function(type, callback, instance) {
@@ -88,9 +91,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         var key;
         
         // Filter out null values
-        if (obj2 === null) {
-            return obj1;
-        }
+        if (obj2 === null) return obj1;
         
         // Loop through the keys
         for (key in obj2) {
@@ -98,15 +99,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             if (obj2.hasOwnProperty(key)) {
                 
                 // falsy values automatically get overwritten
-                if (!obj1[key] && obj2[key])
-                {
-                    obj1[key] = obj2[key];
-                }
+                if (!obj1[key] && obj2[key]) obj1[key] = obj2[key];
                 
                 // Skip duplicates
-                if (obj1[key] === obj2[key]) {
-                    continue;
-                }
+                if (obj1[key] === obj2[key]) continue;
                 
                 if (deep && typeof obj1[key] === 'object') {
                     // Recursive merge
@@ -134,10 +130,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     else if (obj1._internals && obj1._internals.type === 'module') {
                         
                         // Disallow overridding module ids
-                        if (key === 'id') {
-                            
-                            throw "You can't overwrite an module instance id.";
-                        }
+                        if (key === 'id') throw "You can't overwrite an module instance id.";
                     }
                     
                     // Make the assignment
@@ -174,7 +167,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         instance.id = id;
         
         // Merge config into instance
-        if (config) { extend(instance, config, true); }
+        if (config) extend(instance, config, true);
         
         // Save the instance
         registered[id].instance = instance;
@@ -183,7 +176,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     function startModule(id, config, core) {
         
         // Merge config into instance
-        if (config) { extend(registered[id].instance, config, true); }
+        if (config) extend(registered[id].instance, config, true);
         
         // Flag the module
         registered[id].started = true;
@@ -271,9 +264,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     
                     listener = listeners[key][i];
                     
-                    if (listener.id === id) {
-                        listeners[key].splice(i, 1);
-                    }
+                    if (listener.id === id) listeners[key].splice(i, 1);
                 }
             }
             
@@ -284,7 +275,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9.8',
+        version: '0.9.9',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
