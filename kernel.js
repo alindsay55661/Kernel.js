@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9.9
+Copyright (c) 2011 Alan Lindsay - version 0.9.10
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -42,7 +42,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         // Add built-in methods - these override any definition methods
         h.broadcast = function(type, data, callback) {
             
-            var i, l = listeners[type], size;
+            var i, l = listeners[type], e = listeners.event, size, eventData;
+            
+            // First cycle through the 'event' event listeners
+            if (e) {
+                
+                eventData = {
+                    type: type,
+                    data: data,
+                    time: new Date(),
+                    listeners: l
+                }
+                
+                for (i=0,size=e.length; i<size; i+=1) {
+                    listeners.event[i].callback(eventData);
+                }
+            }
             
             // Cycle through the listeners and call the callbacks
             if (l) {
@@ -275,7 +290,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9.9',
+        version: '0.9.10',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
