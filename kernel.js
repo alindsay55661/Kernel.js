@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9.10
+Copyright (c) 2011 Alan Lindsay - version 0.9.11
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -36,13 +36,50 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
     
     function defineHub(name, Definition) {
+        
         // Create instance
-        var h = new Definition();
+        var h = new Definition(), broadcastCount = {}, callbackCount = {},
+                totalElapseTime = {};
         
         // Add built-in methods - these override any definition methods
         h.broadcast = function(type, data, callback) {
             
-            var i, l = listeners[type], e = listeners.event, size, eventData;
+            var i, l = listeners[type], e = listeners.event, size, eventData,
+                start, diff, elapseTime = 0, listenerData = [];
+            
+            // Increment the broadcastCount
+            broadcastCount[type] = broadcastCount[type] || 0;
+            broadcastCount[type] += 1;
+            broadcastCount.event = broadcastCount.event || 0;
+            broadcastCount.event += 1;
+            callbackCount[type] = callbackCount[type] || 0;
+            callbackCount.event = callbackCount.event || 0;
+            totalElapseTime[type] = totalElapseTime[type] || 0;
+            
+            // Cycle through the listeners and call the callbacks
+            if (l) {
+                
+                for (i=0,size=l.length; i<size; i+=1) {
+                    
+                    start = (new Date).getTime();
+                    
+                    listeners[type][i].callback(data);
+                    
+                    diff = (new Date).getTime() - start;
+                    elapseTime += diff;
+                    totalElapseTime[type] += diff;
+                    
+                    // Increment the listener count
+                    callbackCount[type] += 1;
+                    callbackCount.event += 1;
+            
+                    listenerData.push({
+                        id: listeners[type][i].id, 
+                        elapseTime: diff,
+                        callback: listeners[type][i].callback
+                    });
+                }
+            }
             
             // First cycle through the 'event' event listeners
             if (e) {
@@ -51,19 +88,19 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     type: type,
                     data: data,
                     time: new Date(),
-                    listeners: l
-                }
+                    listeners: listenerData,
+                    broadcastCount: broadcastCount[type],
+                    callbackCount: callbackCount[type],
+                    elapseTime: elapseTime,
+                    totalElapseTime: totalElapseTime[type],
+                    all: {
+                        broadcastCount: broadcastCount.event,
+                        callbackCount: callbackCount.event
+                    }
+                };
                 
                 for (i=0,size=e.length; i<size; i+=1) {
                     listeners.event[i].callback(eventData);
-                }
-            }
-            
-            // Cycle through the listeners and call the callbacks
-            if (l) {
-                
-                for (i=0,size=l.length; i<size; i+=1) {
-                    listeners[type][i].callback(data);
                 }
             }
             
@@ -94,6 +131,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 listeners[t].push({callback: callback, id: id});
             }
         };
+        
+        h.getStats = function() {
+            return {
+                broadcastCount: broadcastCount,
+                callbackCount: callbackCount,
+                totalElapseTime: totalElapseTime
+            };
+        }
         
         hubs[name] = h;
     }
@@ -290,7 +335,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9.10',
+        version: '0.9.11',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
