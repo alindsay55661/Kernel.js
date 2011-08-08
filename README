@@ -1,4 +1,4 @@
-Kernel.js is an ultra lightweight (~2k) architecture for building scalable 
+Kernel.js is an ultra lightweight (~3k) architecture for building scalable 
 javascript applications. It provides a messaging system that allows you to 
 build your application in a decoupled and flexible fashion.
 

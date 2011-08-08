@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 0.9.10
+Copyright (c) 2011 Alan Lindsay - version 1.0
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -36,13 +36,50 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
     
     function defineHub(name, Definition) {
+        
         // Create instance
-        var h = new Definition();
+        var h = new Definition(), broadcastCount = {event: 0}, callbackCount = {event: 0},
+                totalElapseTime = {event: 0}, key, method;
         
         // Add built-in methods - these override any definition methods
         h.broadcast = function(type, data, callback) {
             
-            var i, l = listeners[type], e = listeners.event, size, eventData;
+            var i, l = listeners[type], e = listeners.event, size, eventData,
+                start, diff, elapseTime = 0, listenerData = [];
+            
+            // Increment the broadcastCount
+            broadcastCount[type] = broadcastCount[type] || 0;
+            broadcastCount[type] += 1;
+            broadcastCount.event += 1;
+            callbackCount[type] = callbackCount[type] || 0;
+            totalElapseTime[type] = totalElapseTime[type] || 0;
+            
+            // Cycle through the listeners and call the callbacks
+            if (l) {
+                
+                for (i=0,size=l.length; i<size; i+=1) {
+                    
+                    // Measure how long it takes to complete
+                    start = (new Date).getTime();
+                    
+                    listeners[type][i].callback(data);
+                    
+                    diff = (new Date).getTime() - start;
+                    elapseTime += diff;
+                    totalElapseTime[type] += diff;
+                    totalElapseTime.event += diff;
+                    
+                    // Increment the listener count
+                    callbackCount[type] += 1;
+                    callbackCount.event += 1;
+            
+                    listenerData.push({
+                        id: listeners[type][i].id, 
+                        elapseTime: diff,
+                        callback: listeners[type][i].callback
+                    });
+                }
+            }
             
             // First cycle through the 'event' event listeners
             if (e) {
@@ -51,19 +88,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     type: type,
                     data: data,
                     time: new Date(),
-                    listeners: l
-                }
+                    listeners: listenerData,
+                    broadcastCount: broadcastCount[type],
+                    callbackCount: callbackCount[type],
+                    elapseTime: elapseTime,
+                    totalElapseTime: totalElapseTime[type],
+                    all: {
+                        broadcastCount: broadcastCount.event,
+                        callbackCount: callbackCount.event,
+                        totalElapseTime: totalElapseTime.event
+                    }
+                };
                 
                 for (i=0,size=e.length; i<size; i+=1) {
                     listeners.event[i].callback(eventData);
-                }
-            }
-            
-            // Cycle through the listeners and call the callbacks
-            if (l) {
-                
-                for (i=0,size=l.length; i<size; i+=1) {
-                    listeners[type][i].callback(data);
                 }
             }
             
@@ -90,16 +128,33 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 t = type[i];
                 
                 // Force array 
-                listeners[t] = listeners[t] ? listeners[t] : [];
+                listeners[t] = listeners[t] || [];
                 listeners[t].push({callback: callback, id: id});
             }
         };
         
+        h.getStats = function() {
+            return {
+                broadcastCount: broadcastCount,
+                callbackCount: callbackCount,
+                totalElapseTime: totalElapseTime
+            };
+        }
+        
+        // Decorate the hub methods
+        for (key in h) {
+            
+            method = h[key];
+            
+            if (typeof method === 'function') {
+                
+                // Reassign method
+                h[key] = Kernel.decorateMethod(h, key, method);
+            }
+        }
+        
         hubs[name] = h;
     }
-    
-    // Define an empty router
-    defineHub('main', function(){});
     
     function extend(obj1, obj2, deep) {
         
@@ -145,7 +200,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     else if (obj1._internals && obj1._internals.type === 'module') {
                         
                         // Disallow overridding module ids
-                        if (key === 'id') throw "You can't overwrite an module instance id.";
+                        if (key === 'id') throw "You can't overwrite a module instance id.";
                     }
                     
                     // Make the assignment
@@ -160,7 +215,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // This will create a module instance - but it won't call its init method.
     function registerModule(id, type, hub, config) {
         
-        var hub = hub || defaultHub, instance;
+        var hub = hub || defaultHub, instance, key, method, tmp;
             
         registered[id] = {};
         registered[id].hub = hubs[hub];
@@ -183,6 +238,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         
         // Merge config into instance
         if (config) extend(instance, config, true);
+        
+        // Wrap all the methods in try/catch blocks
+        for (key in instance) {
+            
+            method = instance[key];
+            
+            if (typeof method === 'function') {
+                
+                // Reassign method
+                instance[key] = Kernel.decorateMethod(instance, key, method);
+            }
+        }
         
         // Save the instance
         registered[id].instance = instance;
@@ -264,6 +331,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStart: function(instance) {
             instance.init();
         },
+        decorateMethod: function(instance, name, method) {
+            
+            return function() {
+                
+                try {
+                    return method.apply(this, arguments);
+                }
+                catch (e) {
+                    throw e;
+                }
+            }
+        },
         stop: function(id) {
             
             var key, i, size, listener;
@@ -290,7 +369,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '0.9.10',
+        version: '1.0',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
@@ -304,3 +383,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     return core;
     
 }());
+
+// Define an empty router
+Kernel.hub.define('main', function(){});
