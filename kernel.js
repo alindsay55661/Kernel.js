@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 1.0
+Copyright (c) 2011 Alan Lindsay - version 1.1
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -27,6 +27,32 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         listeners = {},
         defaultHub = 'main';
 
+	function decorateMethods(obj) {
+        	
+    	if (!obj) return;
+    	
+    	for (key in obj) {
+            
+            if (key === 'decorateMethod' || key === 'decorateMethods') return;
+            
+            if (!obj._decoratedMethods) obj._decoratedMethods = {};
+            	
+            if (!obj._decoratedMethods[key]) {
+        
+            	method = obj[key];
+	            
+	            if (typeof method === 'function') {
+
+	                // Reassign method
+	                obj[key] = Kernel.decorateMethod(obj, key, method);
+	                
+	                // Track decorated methods for later decoration calls
+	                obj._decoratedMethods[key] = true;
+	            }
+            }
+        }
+    }
+        
     function setDefaultHub(name) {
         defaultHub = name;
     }
@@ -39,7 +65,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         
         // Create instance
         var h = new Definition(), broadcastCount = {event: 0}, callbackCount = {event: 0},
-                totalElapseTime = {event: 0}, key, method;
+                totalElapseTime = {event: 0}, key, method, decoratedMethods = {};
+        
+        h._internals = {};
+        h._internals.type = 'hub';
+        h.id = name;
         
         // Add built-in methods - these override any definition methods
         h.broadcast = function(type, data, callback) {
@@ -141,18 +171,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             };
         }
         
-        // Decorate the hub methods
-        for (key in h) {
-            
-            method = h[key];
-            
-            if (typeof method === 'function') {
-                
-                // Reassign method
-                h[key] = Kernel.decorateMethod(h, key, method);
-            }
-        }
+        // Decorate during instatiation
+        decorateMethods(h);
         
+        // Make available to outside code (for manual object manipulation)
+        h.decorateMethods = decorateMethods;
+        
+        // Store hub in hubs array
         hubs[name] = h;
     }
     
@@ -163,18 +188,26 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         // Filter out null values
         if (obj2 === null) return obj1;
         
+        if (obj1._internals && (obj1._internals.type === 'module' || obj1._internals.type === 'hub') ) {
+	        
+	        // Decorate new methods
+	        decorateMethods(obj1);
+       }
+                
         // Loop through the keys
         for (key in obj2) {
 
             if (obj2.hasOwnProperty(key)) {
                 
-                // falsy values automatically get overwritten
-                if (!obj1[key] && obj2[key]) obj1[key] = obj2[key];
-                
                 // Skip duplicates
                 if (obj1[key] === obj2[key]) continue;
                 
-                if (deep && typeof obj1[key] === 'object') {
+                // falsy values automatically get overwritten
+                if (!obj1[key] && obj2[key]) {
+                	
+                	obj1[key] = obj2[key];
+                } 
+                else if (deep && typeof obj1[key] === 'object') {
                     // Recursive merge
                     extend(obj1[key], obj2[key], true);
                 }
@@ -182,7 +215,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     
                     if (obj1._internals && obj1._internals.type === 'Kernel') {
                 
-                        // Disallow overwriting base methods
+                        // Disallow overwriting base objects
                         switch (key) {
                             case 'extend':
                             case 'module':
@@ -227,7 +260,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             instance = new registered[id].Definition(registered[id].hub);
         }
         catch (e) {
-            throw "Missing or broken module definition ["+id+"] - did you forget to include the file? ";
+            throw "Couldn't register module: ["+id+"] - missing or broken Definition: "+e.message;
         }
         
         // Add built-in methods to instance
@@ -364,12 +397,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             
             // Flag the module
             registered[id].started = false;
-        
         },
         onStop: function(instance) {
             instance.kill();
         },
-        version: '1.0',
+        version: '1.1',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
