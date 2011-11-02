@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 1.1
+Copyright (c) 2011 Alan Lindsay - version 2.0
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -23,14 +23,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 (Kernel = function() {
     
     var self = this, 
-        core, hubs = {}, modules = {}, registered = {},
+        core, hubs = { main: {} }, modules = {}, registered = {},
         listeners = {},
         defaultHub = 'main';
+        
+	function strToArray(str) {
+		
+		var arr = [];
+		
+		if (str.constructor.toString().indexOf('Array') === -1) arr.push(str);
+        
+        return arr;
+	}
 
 	function decorateMethods(obj) {
         	
     	if (!obj) return;
-    	
+
     	for (key in obj) {
             
             if (key === 'decorateMethod' || key === 'decorateMethods') return;
@@ -44,7 +53,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	            if (typeof method === 'function') {
 
 	                // Reassign method
-	                obj[key] = Kernel.decorateMethod(obj, key, method);
+	                obj[key] = core.decorateMethod(obj, key, method);
 	                
 	                // Track decorated methods for later decoration calls
 	                obj._decoratedMethods[key] = true;
@@ -54,21 +63,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
         
     function setDefaultHub(name) {
+    	
         defaultHub = name;
     }
 
     function defineModule(name, Definition) {
-        modules[name] = Definition;
+    	
+    	modules[name] = Definition;
     }
     
     function defineHub(name, Definition) {
         
         // Create instance
-        var h = new Definition(), broadcastCount = {event: 0}, callbackCount = {event: 0},
-                totalElapseTime = {event: 0}, key, method, decoratedMethods = {};
+        var broadcastCount = {event: 0}, callbackCount = {event: 0},
+            totalElapseTime = {event: 0}, key, method, h = Definition;
         
         h._internals = {};
         h._internals.type = 'hub';
+        h._internals.module = {};
         h.id = name;
         
         // Add built-in methods - these override any definition methods
@@ -139,19 +151,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             if (callback) callback();
         };
         
-        h.listen = function(type, callback, instance) {
+        h.listen = function(type, callback) {
             
-            if (!instance) {
-                throw 'Listen requires the module instance as the 3rd parameter.';
-            }
-            
-            var i, size, t, tmp = [], id = instance.id;
+            var i, size, t, tmp = [], id = h._internals.module.id;
             
             // Cast to array
-            if (type.constructor.toString().indexOf('Array') === -1) {
-                tmp.push(type);
-                type = tmp;
-            }
+            type = strToArray(type);
             
             for (i=0,size=type.length; i<size; i+=1) {
                 
@@ -170,46 +175,52 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 totalElapseTime: totalElapseTime
             };
         }
-        
+
         // Decorate during instatiation
         decorateMethods(h);
-        
-        // Make available to outside code (for manual object manipulation)
-        h.decorateMethods = decorateMethods;
         
         // Store hub in hubs array
         hubs[name] = h;
     }
     
     function extend(obj1, obj2, deep) {
-        
+
         var key;
         
         // Filter out null values
         if (obj2 === null) return obj1;
         
+        // Reset arrays and objects if needed
+        if (typeof obj1 !== "object" || !obj1) obj1 = (obj2 instanceof Array) ? [] : {};
+        
+        // Force deep extend & decoration for hubs and modules
         if (obj1._internals && (obj1._internals.type === 'module' || obj1._internals.type === 'hub') ) {
 	        
-	        // Decorate new methods
+	        deep = true;
 	        decorateMethods(obj1);
-       }
-                
+		}
+
         // Loop through the keys
         for (key in obj2) {
-
+        	
             if (obj2.hasOwnProperty(key)) {
                 
-                // Skip duplicates
+                // Skip duplicates, internals and recursive copies
                 if (obj1[key] === obj2[key]) continue;
-                
-                // falsy values automatically get overwritten
-                if (!obj1[key] && obj2[key]) {
+                if (key === '_internals') continue;
+                if (key === 'hub') continue;
+				if (obj1 === obj2[key]) continue;
+				
+				// Handle dom objects
+				if (obj2[key] instanceof Node) {
+					obj1[key] = obj2[key];
+					continue;
+				}
+
+				// Handle recursion
+                if (deep && typeof obj2[key] === 'object') {
                 	
-                	obj1[key] = obj2[key];
-                } 
-                else if (deep && typeof obj1[key] === 'object') {
-                    // Recursive merge
-                    extend(obj1[key], obj2[key], true);
+                    obj1[key] = Kernel.extend(obj1[key], obj2[key], true);
                 }
                 else {
                     
@@ -218,22 +229,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         // Disallow overwriting base objects
                         switch (key) {
                             case 'extend':
+                            case 'decorateMethods':
                             case 'module':
                             case 'register':
                             case 'hub':
                             case 'start':
                             case 'stop':
+                            case 'version':
+                            case '_internals':
                                 throw "You can't extend '"+key+"', it's part of kernel's base functionality.";
-                                break;
                             
                             default:
                                 // Assignment below
                         }
                     }
                     else if (obj1._internals && obj1._internals.type === 'module') {
-                        
+
                         // Disallow overridding module ids
-                        if (key === 'id') throw "You can't overwrite a module instance id.";
+                        if (key === 'id') throw "You can't overwrite a module instance id. ["+obj1.id+"]";
                     }
                     
                     // Make the assignment
@@ -248,41 +261,54 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // This will create a module instance - but it won't call its init method.
     function registerModule(id, type, hub, config) {
         
-        var hub = hub || defaultHub, instance, key, method, tmp;
-            
+        var hub = hub || defaultHub, instance, key, method, tmp, parents, parent, merged = {};
+        
         registered[id] = {};
         registered[id].hub = hubs[hub];
-        registered[id].Definition = modules[type];
         registered[id].started = false;
-        
+        registered[id].Definition = modules[type];
+            
+        if (registered[id].Definition && registered[id].Definition.extend) {
+        	
+        	// Cast to array
+    		parents = strToArray(registered[id].Definition.extend);
+    		
+    		for (i=0; i<parents.length; i+=1) {
+    			
+    			// Create module instance
+    			parent = parents[i];
+    			parent = Kernel.extend({}, modules[parent], true);
+    			
+    			Kernel.extend(merged, parent, true);
+    		}
+        }    
+    	
         // Create a module instance
         try {
-            instance = new registered[id].Definition(registered[id].hub);
+            instance = Kernel.extend({}, registered[id].Definition, true);
         }
         catch (e) {
             throw "Couldn't register module: ["+id+"] - missing or broken Definition: "+e.message;
         }
         
-        // Add built-in methods to instance
+        // Merge config into instance
+        if (config) Kernel.extend(instance, config, true);
+        
+        // Merge instance into parents
+    	Kernel.extend(merged, instance, true); 
+    	instance = merged;
+
+		// Add built-in methods to instance
         instance._internals = {};
         instance._internals.type = 'module';
+        instance._internals.moduleType = type;
         instance.kill = instance.kill || function() {};
         instance.id = id;
-        
-        // Merge config into instance
-        if (config) extend(instance, config, true);
-        
-        // Wrap all the methods in try/catch blocks
-        for (key in instance) {
-            
-            method = instance[key];
-            
-            if (typeof method === 'function') {
+        instance.hub = hubs[hub];
+        instance.hub._internals.module = instance;
                 
-                // Reassign method
-                instance[key] = Kernel.decorateMethod(instance, key, method);
-            }
-        }
+        // Decorate methods
+        decorateMethods(instance);
         
         // Save the instance
         registered[id].instance = instance;
@@ -302,10 +328,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     
     core = {
         extend: extend,
+        decorateMethods: decorateMethods,
         module: {
             define: defineModule,
             get: function(id) {
+            	
+            	if (!registered[id]) throw "Couldn't get instance for: "+id+", is it registered?";
+            	
                 return registered[id].instance;
+            },
+            getDefinition: function(type) {
+                return modules[type];
             },
             isStarted: function(id) {
                 return registered[id].started;
@@ -401,7 +434,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '1.1',
+        version: '2.0',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
@@ -415,6 +448,3 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     return core;
     
 }());
-
-// Define an empty router
-Kernel.hub.define('main', function(){});
