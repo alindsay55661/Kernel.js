@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.0
+Copyright (c) 2011 Alan Lindsay - version 2.1
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -212,9 +212,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 				if (obj1 === obj2[key]) continue;
 				
 				// Handle dom objects
-				if (obj2[key] instanceof Node) {
-					obj1[key] = obj2[key];
-					continue;
+				try {
+					if (obj2[key] instanceof Node) {
+						obj1[key] = obj2[key];
+						continue;
+					}
+				}
+				catch (e) {
+					// In order to run in non-DOM environments like node.js
 				}
 
 				// Handle recursion
@@ -434,7 +439,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.0',
+        version: '2.1',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
