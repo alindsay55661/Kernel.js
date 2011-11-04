@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.1
+Copyright (c) 2011 Alan Lindsay - version 2.2
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -23,7 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 (Kernel = function() {
     
     var self = this, 
-        core, hubs = { main: {} }, modules = {}, registered = {},
+        core, hubs = { main: { _internals: {} } }, modules = {}, registered = {},
         listeners = {},
         defaultHub = 'main';
         
@@ -439,7 +439,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.1',
+        version: '2.2',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
