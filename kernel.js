@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.2
+Copyright (c) 2011 Alan Lindsay - version 2.4
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -23,7 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 (Kernel = function() {
     
     var self = this, 
-        core, hubs = { main: { _internals: {} } }, modules = {}, registered = {},
+        core, hubs = { }, modules = {}, registered = {},
         listeners = {},
         defaultHub = 'main';
         
@@ -185,7 +185,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     
     function extend(obj1, obj2, deep) {
 
-        var key;
+        var key, i, l;
         
         // Filter out null values
         if (obj2 === null) return obj1;
@@ -218,9 +218,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 						continue;
 					}
 				}
-				catch (e) {
-					// In order to run in non-DOM environments like node.js
-				}
+				catch (e) { /* In order to run in non-DOM environments like node.js */ }
 
 				// Handle recursion
                 if (deep && typeof obj2[key] === 'object') {
@@ -254,8 +252,21 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                         if (key === 'id') throw "You can't overwrite a module instance id. ["+obj1.id+"]";
                     }
                     
-                    // Make the assignment
-                    obj1[key] = obj2[key];
+                    // Merge arrays, don't override indexes blindly
+                    if (obj1 instanceof Array && obj2 instanceof Array) {
+                    
+                    	// Filter out duplicates
+	                    for (i=0, l=obj1.length; i<l; i+=1) {
+	        				if (obj1[i] === obj2[key]) continue;
+	        			}
+	        			
+	        			// Add non-duplicates
+	                    obj1.push(obj2[key]);
+                    }
+                    else {
+                    	// Make the assignment
+                    	obj1[key] = obj2[key];
+                    }
                 }
             }
         }
@@ -439,7 +450,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.2',
+        version: '2.4',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
@@ -453,3 +464,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     return core;
     
 }());
+
+// Define main hub
+Kernel.hub.define('main', {});
+
