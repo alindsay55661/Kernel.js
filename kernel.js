@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.4
+Copyright (c) 2011 Alan Lindsay - version 2.5
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -27,49 +27,56 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         listeners = {},
         defaultHub = 'main';
         
-	function strToArray(str) {
-		
-		var arr = [];
-		
-		if (str.constructor.toString().indexOf('Array') === -1) arr.push(str);
+    function strToArray(str) {
+
+        var arr = [];
+        
+        if (str.constructor.toString().indexOf('Array') === -1) arr.push(str);
+        else arr = str;
         
         return arr;
-	}
+    }
 
-	function decorateMethods(obj) {
-        	
-    	if (!obj) return;
-
-    	for (key in obj) {
-            
-            if (key === 'decorateMethod' || key === 'decorateMethods') return;
-            
-            if (!obj._decoratedMethods) obj._decoratedMethods = {};
-            	
-            if (!obj._decoratedMethods[key]) {
+    // Should only used for Kernel, modules and hubs
+    function decorateMethods(obj) {
         
-            	method = obj[key];
-	            
-	            if (typeof method === 'function') {
+        var key, method, m;
 
-	                // Reassign method
-	                obj[key] = core.decorateMethod(obj, key, method);
-	                
-	                // Track decorated methods for later decoration calls
-	                obj._decoratedMethods[key] = true;
-	            }
+        if (!obj) return;
+
+        for (key in obj) {
+            
+            if (obj.hasOwnProperty(key)) {
+            
+                if (key === 'decorateMethod' || key === 'decorateMethods') return;
+                
+                if (!obj._decoratedMethods) obj._decoratedMethods = {};
+    
+                if (!obj._decoratedMethods[key]) {
+            
+                    method = obj[key];
+                    
+                    if (typeof method === 'function') {
+    
+                        // Reassign method
+                        obj[key] = core.decorateMethod(obj, key, method);
+                        
+                        // Track decorated methods for later decoration calls
+                        obj._decoratedMethods[key] = true;
+                    }
+                }
             }
         }
     }
         
     function setDefaultHub(name) {
-    	
+
         defaultHub = name;
     }
 
     function defineModule(name, Definition) {
-    	
-    	modules[name] = Definition;
+
+        modules[name] = Definition;
     }
     
     function defineHub(name, Definition) {
@@ -78,9 +85,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         var broadcastCount = {event: 0}, callbackCount = {event: 0},
             totalElapseTime = {event: 0}, key, method, h = Definition;
         
-        h._internals = {};
-        h._internals.type = 'hub';
-        h._internals.module = {};
+        h._internals = { type: 'hub' };
         h.id = name;
         
         // Add built-in methods - these override any definition methods
@@ -151,9 +156,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             if (callback) callback();
         };
         
-        h.listen = function(type, callback) {
+        h.listen = function(type, callback, moduleId) {
             
-            var i, size, t, tmp = [], id = h._internals.module.id;
+            // If not a module then store in hub id
+            moduleId = moduleId || 'hub-'+h.id;
+            
+            var i, size, t, tmp = [];
             
             // Cast to array
             type = strToArray(type);
@@ -164,7 +172,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 
                 // Force array 
                 listeners[t] = listeners[t] || [];
-                listeners[t].push({callback: callback, id: id});
+                listeners[t].push({callback: callback, id: moduleId});
             }
         };
         
@@ -174,7 +182,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 callbackCount: callbackCount,
                 totalElapseTime: totalElapseTime
             };
-        }
+        };
+        
+        h.share = function(obj) {
+            
+            Kernel.extend(h, obj);
+        };
 
         // Decorate during instatiation
         decorateMethods(h);
@@ -183,7 +196,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         hubs[name] = h;
     }
     
-    function extend(obj1, obj2, deep) {
+    // This checks for DOM nodes and 3rd party lib objects that should be treated as DOM nodes
+    function isDomReference(obj) {
+        
+        try {
+            
+            // Put other libs here if desired
+            if (obj instanceof Node) return true;
+            if (obj instanceof jQuery) return true;
+            
+        }
+        catch (e) { 
+            // In order to run in non-DOM environments like node.js
+        }
+        
+        return false;
+    }
+
+    function extend(obj1, obj2, deep, proto) {
 
         var key, i, l;
         
@@ -195,34 +225,31 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         
         // Force deep extend & decoration for hubs and modules
         if (obj1._internals && (obj1._internals.type === 'module' || obj1._internals.type === 'hub') ) {
-	        
-	        deep = true;
-	        decorateMethods(obj1);
-		}
+            
+            deep = true;
+            decorateMethods(obj1);
+        }
 
         // Loop through the keys
         for (key in obj2) {
-        	
-            if (obj2.hasOwnProperty(key)) {
+
+            if (obj2.hasOwnProperty(key) || proto) {
                 
                 // Skip duplicates, internals and recursive copies
                 if (obj1[key] === obj2[key]) continue;
                 if (key === '_internals') continue;
                 if (key === 'hub') continue;
-				if (obj1 === obj2[key]) continue;
-				
-				// Handle dom objects
-				try {
-					if (obj2[key] instanceof Node) {
-						obj1[key] = obj2[key];
-						continue;
-					}
-				}
-				catch (e) { /* In order to run in non-DOM environments like node.js */ }
-
-				// Handle recursion
+                if (obj1 === obj2[key]) continue;
+                
+                // Handle dom objects
+                if (isDomReference(obj2[key])) {
+                    obj1[key] = obj2[key];
+                    continue;
+                }
+                
+                // Handle recursion
                 if (deep && typeof obj2[key] === 'object') {
-                	
+
                     obj1[key] = Kernel.extend(obj1[key], obj2[key], true);
                 }
                 else {
@@ -255,17 +282,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     // Merge arrays, don't override indexes blindly
                     if (obj1 instanceof Array && obj2 instanceof Array) {
                     
-                    	// Filter out duplicates
-	                    for (i=0, l=obj1.length; i<l; i+=1) {
-	        				if (obj1[i] === obj2[key]) continue;
-	        			}
-	        			
-	        			// Add non-duplicates
-	                    obj1.push(obj2[key]);
+                        // Filter out duplicates
+                        for (i=0, l=obj1.length; i<l; i+=1) {
+                            if (obj1[i] === obj2[key]) continue;
+                        }
+
+                        // Add non-duplicates
+                        obj1.push(obj2[key]);
                     }
                     else {
-                    	// Make the assignment
-                    	obj1[key] = obj2[key];
+                        // Make the assignment
+                        obj1[key] = obj2[key];
                     }
                 }
             }
@@ -277,31 +304,34 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // This will create a module instance - but it won't call its init method.
     function registerModule(id, type, hub, config) {
         
-        var hub = hub || defaultHub, instance, key, method, tmp, parents, parent, merged = {};
-        
-        registered[id] = {};
-        registered[id].hub = hubs[hub];
-        registered[id].started = false;
-        registered[id].Definition = modules[type];
+        var hub = hub || defaultHub, instance, key, method, tmp, parents, parent, 
+            merged = {}, proto;
             
+        registered[id] = {
+            hub: hubs[hub],
+            started: false,
+            Definition: modules[type]
+        };
+        
         if (registered[id].Definition && registered[id].Definition.extend) {
-        	
-        	// Cast to array
-    		parents = strToArray(registered[id].Definition.extend);
-    		
-    		for (i=0; i<parents.length; i+=1) {
-    			
-    			// Create module instance
-    			parent = parents[i];
-    			parent = Kernel.extend({}, modules[parent], true);
-    			
-    			Kernel.extend(merged, parent, true);
-    		}
+
+            // Cast to array
+            parents = strToArray(registered[id].Definition.extend);
+
+            for (i=0; i<parents.length; i+=1) {
+
+                // Create module instance
+                parent = parents[i];
+                parent = { __proto__: modules[parent] };
+                
+                // Copy prototype methods of parent
+                Kernel.extend(merged, parent, true, true);
+            }
         }    
-    	
+
         // Create a module instance
         try {
-            instance = Kernel.extend({}, registered[id].Definition, true);
+            instance = { __proto__: registered[id].Definition };
         }
         catch (e) {
             throw "Couldn't register module: ["+id+"] - missing or broken Definition: "+e.message;
@@ -310,19 +340,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         // Merge config into instance
         if (config) Kernel.extend(instance, config, true);
         
-        // Merge instance into parents
-    	Kernel.extend(merged, instance, true); 
-    	instance = merged;
+        // Merge parents into instance
+        Kernel.extend(instance, merged, true); 
 
-		// Add built-in methods to instance
-        instance._internals = {};
-        instance._internals.type = 'module';
-        instance._internals.moduleType = type;
+        // Add built-ins
+        instance._internals = { type: 'module', moduleType: type };
         instance.kill = instance.kill || function() {};
         instance.id = id;
-        instance.hub = hubs[hub];
-        instance.hub._internals.module = instance;
-                
+        
+        // Setup access to the hub
+        instance.hub = { 
+            __proto__: registered[id].hub, 
+            listen: function(type, callback) {
+                registered[id].hub.listen(type, callback, id);
+            }
+        };
+
         // Decorate methods
         decorateMethods(instance);
         
@@ -348,9 +381,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         module: {
             define: defineModule,
             get: function(id) {
-            	
-            	if (!registered[id]) throw "Couldn't get instance for: "+id+", is it registered?";
-            	
+                
+                if (!registered[id]) throw "Couldn't get instance for: "+id+", is it registered?";
+                
                 return registered[id].instance;
             },
             getDefinition: function(type) {
@@ -391,7 +424,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             if (id.constructor.toString().indexOf('Array') === -1) {
                 
                 startModule(id, config, this);
-                
             }
             else {
                 // Start all the modules
@@ -418,12 +450,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             return function() {
                 
                 try {
-                    return method.apply(this, arguments);
+                    // Bind instance methods
+                    return method.apply(instance, arguments);
                 }
                 catch (e) {
                     throw e;
                 }
-            }
+            };
         },
         stop: function(id) {
             
@@ -450,7 +483,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.4',
+        version: '2.5',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
@@ -467,4 +500,3 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 // Define main hub
 Kernel.hub.define('main', {});
-
