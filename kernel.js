@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.5
+Copyright (c) 2011 Alan Lindsay - version 2.6
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -368,11 +368,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         // Merge config into instance
         if (config) extend(registered[id].instance, config, true);
         
-        // Flag the module
-        registered[id].started = true;
-        
-        // Initialize the module
-        core.onStart(registered[id].instance);
+        // Initialize the module & set started when done
+        core.onStart(registered[id].instance, function() { registered[id].started = true; });
     }
     
     core = {
@@ -442,8 +439,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 startModule(key, null, this);
             }
         },
-        onStart: function(instance) {
+        onStart: function(instance, callback) {
             instance.init();
+            callback();
         },
         decorateMethod: function(instance, name, method) {
             
@@ -483,7 +481,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.5',
+        version: '2.6',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
