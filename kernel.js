@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.6
+Copyright (c) 2011 Alan Lindsay - version 2.6.1
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -38,7 +38,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
 
     // Should only used for Kernel, modules and hubs
-    function decorateMethods(obj) {
+    function decorateMethods(obj, proto) {
         
         var key, method, m;
 
@@ -46,7 +46,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
         for (key in obj) {
             
-            if (obj.hasOwnProperty(key)) {
+            if (obj.hasOwnProperty(key) || proto) {
             
                 if (key === 'decorateMethod' || key === 'decorateMethods') return;
                 
@@ -57,7 +57,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     method = obj[key];
                     
                     if (typeof method === 'function') {
-    
+
                         // Reassign method
                         obj[key] = core.decorateMethod(obj, key, method);
                         
@@ -227,7 +227,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         if (obj1._internals && (obj1._internals.type === 'module' || obj1._internals.type === 'hub') ) {
             
             deep = true;
-            decorateMethods(obj1);
+            decorateMethods(obj1, true);
         }
 
         // Loop through the keys
@@ -357,7 +357,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         };
 
         // Decorate methods
-        decorateMethods(instance);
+        decorateMethods(instance, true);
         
         // Save the instance
         registered[id].instance = instance;
@@ -481,7 +481,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.6',
+        version: '2.6.1',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
