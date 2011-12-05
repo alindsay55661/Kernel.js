@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.6.1
+Copyright (c) 2011 Alan Lindsay - version 2.6.2
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -39,7 +39,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // Should only used for Kernel, modules and hubs
     function decorateMethods(obj, proto) {
-        
+
         var key, method, m;
 
         if (!obj) return;
@@ -234,12 +234,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         for (key in obj2) {
 
             if (obj2.hasOwnProperty(key) || proto) {
-                
+            
                 // Skip duplicates, internals and recursive copies
                 if (obj1[key] === obj2[key]) continue;
                 if (key === '_internals') continue;
-                if (key === 'hub') continue;
                 if (obj1 === obj2[key]) continue;
+                
+                // Skip recursive hub references
+                if (key === 'hub' && obj2[key]._internals && obj2[key]._internals.type === 'hub') continue;
+                
+                // Handle regex
+                if (obj2[key] instanceof RegExp) {
+                    obj1[key] = obj2[key];
+                    continue;
+                }
                 
                 // Handle dom objects
                 if (isDomReference(obj2[key])) {
@@ -322,16 +330,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
                 // Create module instance
                 parent = parents[i];
-                parent = { __proto__: modules[parent] };
+                parent = modules[parent];
                 
-                // Copy prototype methods of parent
-                Kernel.extend(merged, parent, true, true);
+                Kernel.extend(merged, parent, true);
             }
         }    
 
         // Create a module instance
         try {
-            instance = { __proto__: registered[id].Definition };
+            instance = Kernel.extend(merged, registered[id].Definition, true);
         }
         catch (e) {
             throw "Couldn't register module: ["+id+"] - missing or broken Definition: "+e.message;
@@ -340,9 +347,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         // Merge config into instance
         if (config) Kernel.extend(instance, config, true);
         
-        // Merge parents into instance
-        Kernel.extend(instance, merged, true); 
-
         // Add built-ins
         instance._internals = { type: 'module', moduleType: type };
         instance.kill = instance.kill || function() {};
@@ -481,7 +485,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.6.1',
+        version: '2.6.2',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
