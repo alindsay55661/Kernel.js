@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.6.2
+Copyright (c) 2011 Alan Lindsay - version 2.6.3
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -22,8 +22,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 (Kernel = function() {
     
-    var self = this, 
-        core, hubs = { }, modules = {}, registered = {},
+    var core, hubs = { }, modules = {}, registered = {},
         listeners = {},
         defaultHub = 'main';
         
@@ -40,7 +39,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // Should only used for Kernel, modules and hubs
     function decorateMethods(obj, proto) {
 
-        var key, method, m;
+        var key, method;
 
         if (!obj) return;
 
@@ -83,7 +82,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         
         // Create instance
         var broadcastCount = {event: 0}, callbackCount = {event: 0},
-            totalElapseTime = {event: 0}, key, method, h = Definition;
+            totalElapseTime = {event: 0}, h = Definition;
         
         h._internals = { type: 'hub' };
         h.id = name;
@@ -107,11 +106,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 for (i=0,size=l.length; i<size; i+=1) {
                     
                     // Measure how long it takes to complete
-                    start = (new Date).getTime();
+                    start = (new Date()).getTime();
                     
                     listeners[type][i].callback(data);
                     
-                    diff = (new Date).getTime() - start;
+                    diff = (new Date()).getTime() - start;
                     elapseTime += diff;
                     totalElapseTime[type] += diff;
                     totalElapseTime.event += diff;
@@ -161,7 +160,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             // If not a module then store in hub id
             moduleId = moduleId || 'hub-'+h.id;
             
-            var i, size, t, tmp = [];
+            var i, size, t;
             
             // Cast to array
             type = strToArray(type);
@@ -312,8 +311,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // This will create a module instance - but it won't call its init method.
     function registerModule(id, type, hub, config) {
         
-        var hub = hub || defaultHub, instance, key, method, tmp, parents, parent, 
-            merged = {}, proto;
+        var hub = hub || defaultHub, instance, parents, parent, merged = {}, i;
             
         registered[id] = {
             hub: hubs[hub],
@@ -367,6 +365,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         registered[id].instance = instance;
     }
     
+    function unregisterModule(id) {
+        
+        // Stop the module if started
+        if (registered[id].instance.started) Kernel.stop(id);
+        
+        delete registered[id];
+    }
+    
     function startModule(id, config, core) {
         
         // Merge config into instance
@@ -417,6 +423,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 }
             }
         },
+        unregister: unregisterModule,
         start: function(id, config) {
             
             var i;
@@ -485,7 +492,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.6.2',
+        version: '2.6.3',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
