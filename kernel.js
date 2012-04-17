@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.6.3
+Copyright (c) 2011 Alan Lindsay - version 2.6.4
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -212,7 +212,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         return false;
     }
 
-    function extend(obj1, obj2, deep, proto) {
+    function extend(obj1, obj2, deep, proto, mergeArrays) {
 
         var key, i, l;
         
@@ -228,15 +228,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             deep = true;
             decorateMethods(obj1, true);
         }
+        
+        // Empty arrays unless otherwise specified
+        if (obj1 instanceof Array && obj2 instanceof Array && (!mergeArrays)) {
+            
+            // empty the target array so as not to leave behind extra values
+            obj1 = [];
+        }
 
         // Loop through the keys
         for (key in obj2) {
 
             if (obj2.hasOwnProperty(key) || proto) {
-            
+
                 // Skip duplicates, internals and recursive copies
                 if (obj1[key] === obj2[key]) continue;
                 if (key === '_internals') continue;
+                if (key === '_parent') continue;
+                if (key === '_children') continue;
                 if (obj1 === obj2[key]) continue;
                 
                 // Skip recursive hub references
@@ -256,8 +265,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 
                 // Handle recursion
                 if (deep && typeof obj2[key] === 'object') {
-
-                    obj1[key] = Kernel.extend(obj1[key], obj2[key], true);
+                    
+                    obj1[key] = Kernel.extend(obj1[key], obj2[key], deep, proto, mergeArrays);
                 }
                 else {
                     
@@ -287,7 +296,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                     }
                     
                     // Merge arrays, don't override indexes blindly
-                    if (obj1 instanceof Array && obj2 instanceof Array) {
+                    if (obj1 instanceof Array && obj2 instanceof Array && mergeArrays) {
                     
                         // Filter out duplicates
                         for (i=0, l=obj1.length; i<l; i+=1) {
@@ -378,8 +387,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         // Merge config into instance
         if (config) extend(registered[id].instance, config, true);
         
-        // Initialize the module & set started when done
-        core.onStart(registered[id].instance, function() { registered[id].started = true; });
+        // Set module as started
+        registered[id].started = true;
+        
+        // Initialize the module
+        return core.onStart(registered[id].instance);
     }
     
     core = {
@@ -431,7 +443,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             // Check to see if an array is being used
             if (id.constructor.toString().indexOf('Array') === -1) {
                 
-                startModule(id, config, this);
+                return startModule(id, config, this);
             }
             else {
                 // Start all the modules
@@ -452,7 +464,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         },
         onStart: function(instance, callback) {
             instance.init();
-            callback();
+            if (callback) callback();
         },
         decorateMethod: function(instance, name, method) {
             
@@ -492,7 +504,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.6.3',
+        version: '2.6.4',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
