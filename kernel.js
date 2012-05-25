@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011 Alan Lindsay - version 2.6.4
+Copyright (c) 2012 Alan Lindsay - version 2.7
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -26,16 +26,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         listeners = {},
         defaultHub = 'main';
         
+    // Forces a string to an array
     function strToArray(str) {
 
-        var arr = [];
-        
-        if (str.constructor.toString().indexOf('Array') === -1) arr.push(str);
-        else arr = str;
-        
-        return arr;
-    }
+        if (toString.call(str) === '[object String]') str = [str];
 
+        return str;
+    }
+    
     // Should only used for Kernel, modules and hubs
     function decorateMethods(obj, proto) {
 
@@ -93,6 +91,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var i, l = listeners[type], e = listeners.event, size, eventData,
                 start, diff, elapseTime = 0, listenerData = [];
             
+            // Hook in for debugging purposes
+            if (h.beforeBroadcast) h.beforeBroadcast(type, data);
+      
             // Increment the broadcastCount
             broadcastCount[type] = broadcastCount[type] || 0;
             broadcastCount[type] += 1;
@@ -127,7 +128,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 }
             }
             
-            // First cycle through the 'event' event listeners
+            // Now cycle through the 'event' event listeners
             if (e) {
                 
                 eventData = {
@@ -155,6 +156,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             if (callback) callback();
         };
         
+        // Provide an authorization method if not present.
+        // Everything is authorized by default.
+        h.authorized = h.authorized || function(type, moduleId) { return true; };
+        
         h.listen = function(type, callback, moduleId) {
             
             // If not a module then store in hub id
@@ -162,16 +167,19 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             
             var i, size, t;
             
-            // Cast to array
+            // Cast to array if string
             type = strToArray(type);
             
             for (i=0,size=type.length; i<size; i+=1) {
                 
                 t = type[i];
                 
-                // Force array 
-                listeners[t] = listeners[t] || [];
-                listeners[t].push({callback: callback, id: moduleId});
+                // Only setup callbacks if authorized
+                if (h.authorized(type, moduleId)) {
+                    // Force array
+                    listeners[t] = listeners[t] || [];
+                    listeners[t].push({callback: callback, id: moduleId});
+                }
             }
         };
         
@@ -318,7 +326,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
     
     // This will create a module instance - but it won't call its init method.
-    function registerModule(id, type, hub, config) {
+    function registerModule(id, type, hub, config, core) {
         
         var hub = hub || defaultHub, instance, parents, parent, merged = {}, i;
             
@@ -360,18 +368,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         instance.id = id;
         
         // Setup access to the hub
-        instance.hub = { 
-            __proto__: registered[id].hub, 
-            listen: function(type, callback) {
-                registered[id].hub.listen(type, callback, id);
-            }
+        var H = function() {};
+        H.prototype = registered[id].hub;
+    
+        instance.hub = new H;
+        instance.hub.listen = function(type, callback) {
+          registered[id].hub.listen(type, callback, id);
         };
-
+        instance.hub._internals = Kernel.extend(registered[id].hub._internals, { moduleId: id, moduleType: type });
+    
         // Decorate methods
         decorateMethods(instance, true);
         
         // Save the instance
         registered[id].instance = instance;
+        
+        // execute callbacks if provided
+        if (core.onRegister) core.onRegister(registered[id].instance);
     }
     
     function unregisterModule(id) {
@@ -423,15 +436,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var i;
             
             // Check to see if an array is being used
-            if (id.constructor.toString().indexOf('Array') === -1) {
+            if (toString.call(id) === '[object String]') {
                 
-                registerModule(id, type, hub, config);
+                registerModule(id, type, hub, config, this);
             }
             else {
                 // Register all the modules
                 for (i=0; i<id.length; i+=1) {
                     
-                    registerModule(id[i].id, id[i].type, id[i].hub, id[i].config);
+                    registerModule(id[i].id, id[i].type, id[i].hub, id[i].config, this);
                 }
             }
         },
@@ -441,7 +454,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var i;
             
             // Check to see if an array is being used
-            if (id.constructor.toString().indexOf('Array') === -1) {
+            if (toString.call(id) === '[object String]') {
                 
                 return startModule(id, config, this);
             }
@@ -470,13 +483,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             
             return function() {
                 
-                try {
-                    // Bind instance methods
-                    return method.apply(instance, arguments);
-                }
-                catch (e) {
-                    throw e;
-                }
+                // Bind instance methods
+                return method.apply(instance, arguments);
             };
         },
         stop: function(id) {
@@ -504,7 +512,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.6.4',
+        version: '2.7',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
