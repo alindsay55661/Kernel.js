@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2012 Alan Lindsay - version 2.7
+Copyright (c) 2012 Alan Lindsay - version 2.7.1
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -29,9 +29,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     // Forces a string to an array
     function strToArray(str) {
 
-        if (toString.call(str) === '[object String]') str = [str];
+        if (isString(str)) str = [str];
 
         return str;
+    }
+    
+    function isString(str) {
+        
+    	return Object.prototype.toString.call(str) == '[object String]';
     }
     
     // Should only used for Kernel, modules and hubs
@@ -436,7 +441,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var i;
             
             // Check to see if an array is being used
-            if (toString.call(id) === '[object String]') {
+            if (isString(id)) {
                 
                 registerModule(id, type, hub, config, this);
             }
@@ -454,7 +459,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             var i;
             
             // Check to see if an array is being used
-            if (toString.call(id) === '[object String]') {
+            if (isString(id)) {
                 
                 return startModule(id, config, this);
             }
@@ -512,7 +517,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         onStop: function(instance) {
             instance.kill();
         },
-        version: '2.7',
+        version: '2.7.1',
         _internals: {
             PRIVATE: 'FOR DEBUGGING ONLY',
             type: 'Kernel',
