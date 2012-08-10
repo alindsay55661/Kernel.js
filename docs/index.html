@@ -1,0 +1,372 @@
+<html>
+<head>
+    <title>Kernel.js Docs</title>
+
+    <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:light,regular' rel='stylesheet' type='text/css'>
+    <link href='css/site.css' rel='stylesheet' type='text/css'>
+
+</head>
+
+<body>
+
+<a name='nav-home'></a>
+    <a href="https://github.com/alindsay55661/Kernel.js">
+        <img style="position: absolute; top: 0; right: 0; border: 0; z-index:101" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub">
+    </a>
+
+    
+    <div class='top-nav'>
+        <div class='content'>
+            <a href='#nav-home'>Home</a>
+            <a href='#nav-what'>What is it?</a>
+            <a href='#nav-examples'>Examples</a>
+            <a href='#nav-get-started'>Getting Started</a>
+            <a href='#nav-learnmore'>Learn More</a>
+            <a href='#nav-contribute'>Contribute</a>
+            <a href='#nav-credits'>Credits</a>
+            <span class='twitter-badge'>
+                <a href="https://twitter.com/alanlindsay" class="twitter-follow-button" data-show-count="false">Follow @alanlindsay</a>
+                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+            </span>
+        </div>
+    </div>
+
+    <div class='site-wrap s1'>
+    
+        <div class='separator'></div>
+    
+        <div class='content'>
+
+            <div class='header'>
+                <h1>Kernel.js</h1>
+                
+                <div class='subhead'>
+                    Building scalable apps is fun, yeah?
+                    <a href="https://github.com/alindsay55661/Kernel.js">Download v2.7.1</a>
+                </div>
+            </div>
+
+            <div class='steps'>
+            
+                <a href='#nav-what'>
+                    <h1>What is it?</h1>
+                    Application Architecture
+                </a>              
+                
+                <a href='#nav-examples'>
+                    <h1>Examples</h1>
+                    Both Easy <br/>and Advanced
+                </a>
+                
+                <a href='#nav-get-started'>
+                    <h1>Get Started</h1>
+                    Step by Step Instrtuctions
+                </a>
+                
+                <a href='#nav-learnmore'>
+                    <h1>Learn More</h1>
+                    Advanced Stuff<br/>
+                    and FAQ's
+                </a>
+        
+                <a href='#nav-contribute'>
+                    <h1>Contribute</h1>
+                    Make the World<br/>
+                    a Better Place
+                </a>
+                
+                <br class='clear' />
+            </div>
+
+        </div>
+        <div class='separator'></div>
+
+    </div>
+    
+    <div class='site-wrap s2'>
+        
+        <a name='nav-what' class='anchor'></a>
+        <div class='content'>
+            <h1>What is it?</h1>
+            <p>
+                Kernel.js is an ultra lightweight (~4k) architecture for building scalable javascript applications.  It 
+                provides a messaging system that allows you to build your apps in a decoupled and flexible fashion.  This
+                project was inspired by <a href='http://developer.yahoo.com/yui/theater/video.php?v=zakas-architecture'>
+                Nicholas Zakas's talk on scalable Javascript architecture</a>.
+            </p>
+
+            <div id='architecture-diagram'>
+                <img src='images/kernel_architecture.png'>
+                
+                <div class='label-modules'>
+                    The modules are loosely coupled.  They don't communicate with each other directly.
+                </div>
+                
+                <div class='label-hub'>
+                    Your hub is the messaging bus.  You can also give it an api.
+                </div>
+                
+                <div class='label-kernel'>
+                    Kernel provides lifecycle management.  It can also abstract a base library.
+                </div>
+                
+                <div class='label-base'>
+                    Optionally use a base library (such as jQuery or YUI) to handle browser normalization and ajax.
+                </div>
+                
+            </div>
+            
+            <p>
+                <a href='https://speakerdeck.com/u/addyosmani/p/large-scale-javascript-application-architecture'>
+                Addy Osmani used an excellent analogy</a> when talking about this architecture. He compared it to 
+                airplanes and air traffic control. Airplanes don't interface with each other directly, they 
+                talk with air traffic control to decide when they should land and take off. The Kernel hub is 
+                like air traffic control and modules are like airplanes. 
+            </p>
+        </div>
+        
+    </div>
+
+
+    <div class='site-wrap s3'>
+        
+        <div class='separator'></div>
+        <a name='nav-examples' class='anchor'></a>
+        
+        <div class='content'>
+            <h1>Examples</h1>
+            <p>
+                These examples illustrate how you can use Kernel.js to do simple messaging as well as advanced
+                UI rendering and ajax.  They are just examples, you can do it differently!  
+            </p>
+            
+            <div class='steps'>
+                <a href='example1.html'>
+                    <h1>Example 1</h1>
+                    Communication
+                </a>              
+                
+                <a href='example2.html'>
+                    <h1>Example 2</h1>
+                    Hub API
+                </a>
+                
+                <a href='example3.html'>
+                    <h1>Example 3</h1>
+                    Ajax
+                </a>
+                
+                <a href='example4.html'>
+                    <h1>Example 4</h1>
+                    UI Rendering
+                </a>
+                <br class='clear' />
+            </div>
+            
+        </div>
+        
+        
+    </div>
+
+
+    <div class='site-wrap s4'>
+        
+        <div class='separator'></div>
+        <a name='nav-get-started' class='anchor'></a>
+        
+        <div class='content'>
+            <h1>Getting Started</h1>
+            
+            <p>
+                Kernel.js is extremely easy to use right out of the box but it's meant to be extended and you'll get 
+                a lot more utlity by doing so.  Writing your application takes only 3 steps.  If you haven't
+                <a href="http://github.com/alindsay55661/Kernel.js">downloaded</a> Kernel.js yet be sure to do that before
+                you continue.
+            </p>
+            
+            <div class='steps'>
+                <a href='step1.html'>
+                    <h1>Step 1</h1>
+                    Extend Kernel
+                </a>              
+                
+                <a href='step2.html'>
+                    <h1>Step 2</h1>
+                    Define Hubs
+                </a>
+                
+                <a href='step3.html'>
+                    <h1>Step 3</h1>
+                    Define Modules
+                </a>
+                
+                <a href='step4.html'>
+                    <h1>Enjoy!</h1>
+                    Enjoy Your App!
+                </a>
+                
+                <br class='clear' />
+            </div>
+    
+            <p>
+                As your application grows you can always revisit any of these steps (especially the last one ;)).
+            </p>
+        </div>
+        
+    </div>
+
+
+    
+    <div class='site-wrap s5'>
+        
+        <div class='separator'></div>
+        <a name='nav-learnmore' class='anchor'></a>    
+
+        <div class='content'>
+            <h1>Learn More</h1>
+            <p>
+                Before you begin asking questions make sure you have gone through 
+                <a href='http://developer.yahoo.com/yui/theater/video.php?v=zakas-architecture'>Nicholas Zakas's talk</a>
+                which covers the basic premise of Kernel.js.  Although Kernel.js is slightly different most of the 
+                concepts are the same.
+            </p>
+            
+            <p>
+                Check out the <a href='api.html'>API doc</a> (only one page!).
+            </p>
+            
+            <p>
+                Feel free to contact me with any questions.  Email <a href='mailto:kerneljs@googlegroups.com'>
+                    kerneljs@googlegroups.com</a> or visit the Google Group <a href='http://groups.google.com/group/kerneljs'>
+                    http://groups.google.com/group/kerneljs</a>.
+            </p>
+            
+            <a href='#what-isnt' class='qa'>What isn't Kernel.js?</a>
+            <a href='#license' class='qa'>What are the license terms?</a>
+            <a href='#data-storage' class='qa'>Where should I store my data?</a>
+            <a href='#multi-hub' class='qa'>Can I use multiple hubs?</a>
+            <a href='#more-examples' class='qa'>Where can I see more examples of Kernel.js?</a>              
+            
+            <br/>
+            <br/>
+            
+            <a name='what-isnt' class='anchor'></a>
+            <h2>What isn't Kernel.js?</h2>
+            <p>
+                Kernel.js isn't a framework or base library like YUI or Dojo.  It's an architectural foundation that should
+                be used in conjuction with those frameworks.  Kernel.js doesn't provide any low level utilities like
+                underscore.js, doesn't provide any DOM manipulation like jQuery, and doesn't provide any widgets like ExtJS.
+                While Kernel.js's utility is enormous, it stops at the architectural level.  To build a complex web application
+                you'll need Kernel.js AND other libraries (base library, widget library, etc.).
+            </p>
+            
+            <a name='license' class='anchor'></a>
+            <h2>What are the license terms?</h2>
+            <p>
+                Kernel.js is open source software licensed under the popular MIT license.
+            </p>
+                        
+            <a name='data-storage' class='anchor'></a>
+            <h2>Where should I store my data?</h2>
+            <p>
+                That depends on your application.  In some cases it makes sense to store data on the hub.  For example,
+                if you have a stream of information coming into your application (like stock quotes) you may consider
+                storing that stream with the hub and then providing an api to access it or have the hub send notifications
+                on its own.  This works well for things like dashboards or graphs that pull from a common data source.
+            </p>
+            
+            <p>
+                However, if your modules do not share data liberally it may make sense to store data on the modules.
+                For example, you might have a module that takes data from the hub's stock ticker stream and does some
+                number crunching on it.  We'll assume that number crunching is only relevant for that module.  In that case
+                you'd store the crunched data with the module itself.
+            </p>
+            
+            <p>
+                Another practice I use is to create service modules that manage various datasets. These modules are
+                responsible for making data available to the hub so that other modules can access it.
+            </p>
+            
+            <p>
+                As you can see, the data can live in more than one place.  This is largely a design decision that should
+                be based on the needs of your application.
+            </p>
+            
+            <a name='multi-hub' class='anchor'></a>
+            <h2>Can I use multiple hubs?</h2>
+            <p>
+                Yes.  Right now the hub implementation allows you to setup as many hubs as you want.  Each module
+                can only be attached to one hub and will only have access to the api of that hub.  However, currently
+                all modules can listen to messages from any hub.  
+            </p>
+            <p>
+                This feature was initially put in place to support api versions (so you can run older modules in newer apps)
+                but I am open expanding this.  I've toyed with the idea of allowing a hub config that lets you restrict
+                message routing to modules attached to that hub only.  Let me know how you think it should evolve.
+            </p>
+            
+            <a name='more-examples' class='anchor'></a>
+            <h2>Where can I see more examples of Kernel.js?</h2>
+            <p>
+                Good question!  I'd like to see more as well.  I currently use Kernel.js on commercial projects which
+                are unavailable to the public.  If you have a project using Kernel.js that you'd like to share please
+                let me know and I'll post it here.
+            </p>
+        </div>
+                    
+    </div>
+
+    <div class='site-wrap s6'>
+    
+        <div class='separator'></div>
+        <a name='nav-contribute' class='anchor'></a>    
+
+        <div class='content'>
+            <h1>Contribute</h1>
+            <p>
+                <a href='https://github.com/alindsay55661/Kernel.js'>Kernel.js is open source</a> and easy to extend. 
+                Consider sharing your own extensions or improving the core itself. I am always happy to review github pull 
+                requests and I regularly respond to emails and <a href='http://groups.google.com/group/kerneljs'>
+                google group posts</a>. 
+            </p>
+            
+            <p>
+                If you use Kernel in one of your projects please let me know and I will add you to the examples so
+                others can learn from your work.
+            </p>
+            
+        </div>
+    
+    </div>
+
+    <div class='site-wrap s7'>
+    
+        <div class='separator'></div>
+        <a name='nav-credits' class='anchor'></a>    
+
+        <div class='content'>
+            <h1>Credits</h1>
+            <p>
+                While they have no affiliation with this library, many thanks should go to Nicholas Zakas 
+                (<a href='https://twitter.com/slicknet'>@slicknet</a>) for the original
+                idea and Addy Osmani (<a href='https://twitter.com/addyosmani'>@addyosmani</a>) for continued development
+                of the concept.
+            </p>
+            
+            <p>
+                Many thanks to Dale Herrig for the many hours of stress testing.
+            </p>
+            
+            <p>
+                If you use Kernel in one of your projects please let me know and I will add you to the examples so
+                others can learn from your work.
+            </p>
+            
+        </div>
+    
+    </div>
+    
+</body>
+</html>

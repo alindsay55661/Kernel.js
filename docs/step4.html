@@ -1,0 +1,53 @@
+<html>
+<head>
+
+<link href="css/prism.css" rel="stylesheet" />
+<script src="../lib/prism.js"></script>
+
+</head>
+<body style='padding: 100px;'>
+    
+    <p><a href='index.html#nav-get-started'>Main Page</a></p>
+    
+    <h1>Enjoy Your App!</h1>
+    
+    <p>
+        Finally you can tie everything together and enjoy your app.  This is done by registering, starting
+        and stopping your modules.  When you register modules you can attach them to hubs other than 'main'.
+        When starting modules you can pass in configuration that gets applied to the module.  Check out the <a href='api.html'>api doc</a> for details.
+    </p>
+    
+    
+<pre><code class="language-javascript">
+Kernel.register('module-box', 'StatusBox');
+Kernel.register('module-count', 'StatusCount');
+Kernel.register('module-list', 'StatusList');
+
+$('document').ready(function() {
+    
+    Kernel.start('module-box', {renderTo: '#top'});
+    Kernel.start('module-count', {renderTo: '#center'});
+    Kernel.start('module-list', {renderTo: '#bottom', title: 'My Title'});
+    
+});
+</code></pre>
+    
+    Using multiple hubs ('main' and 'legacyHub')
+    
+<pre><code class="language-javascript">
+
+Kernel.register([
+    {id: 'module-box', type: 'StatusBox', config: {renderTo: '#top'}},
+    {id: 'module-count', type: 'StatusCount', config: {renderTo: '#center'}},
+    {id: 'module-list-legacy', type: 'StatusList', hub: 'legacyHub', config: {renderTo: '#bottom', title: 'My Title'}},
+]);
+
+$('document').ready(function() {
+    
+    Kernel.startAll();
+    
+});    
+</code></pre>    
+
+</body>
+</html>

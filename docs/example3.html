@@ -1,0 +1,220 @@
+
+<html>
+<head>
+<script src='../kernel.min.js'></script>
+<script src='../lib/jquery-1.7.2.js'></script>
+<script>
+
+    // ---------------------------------------------------------------------------------------------
+    // NOTE: When your application gets this big you should break everything into separate files.
+    // ex. kernel-extension.js, main-hub.js, moduleA.js, moduleB.js, moduleC.js, moduleD.js, etc.
+    // ---------------------------------------------------------------------------------------------
+    
+    // Extend Kernel to support ajax - we're using jQuery as the base library
+    Kernel.extend(Kernel, {
+        
+        request: function(config) {
+            //debugger;
+            $.ajax({
+                url: 'ajax.php/'+config.url,
+                type: config.type,
+                data: config.params,
+                dataType: 'json',
+                success: config.success,
+                error: function(jqXHR, textStatus, errorThrown)
+                {
+                    if (config.failure)
+                    {
+                        config.failure('Ajax call failed.');
+                    }
+                }
+            });
+        }
+    });
+    
+    // Define the main Hub - NOTE: 'main' is the default hub used if not otherwise specified in Kernel.start()
+    Kernel.hub.define('main', {
+        
+        // Expose ajax capabilities to modules as well - you could potentially abstract this level even further
+        request: function(config) {
+            Kernel.request(config);
+        },
+        
+        refreshStatusFeed: function() {
+            
+            var self = this;
+            
+            self.request({
+                type: 'GET',
+                url: 'feed',
+                success: function(data) {
+                    self.broadcast('status-feed-update', data)
+                },
+                failure: function(er) {
+                    
+                    // NOTE: No module in this example listens for error messages to errors will go unnoticed
+                    self.broadcast('error', "Couldn't fetch the feed: "+er);
+                }
+            });
+        },
+        
+        updateStatus: function(status) {
+            
+            var self = this;
+            
+            self.request({
+                type: 'POST',
+                url: 'status',
+                params: { newstatus: status },
+                success: function(data) {
+                    
+                    // Let everyone know that you updated your status
+                    self.broadcast('status-update', status);
+                    
+                    // Also update the feed
+                    self.refreshStatusFeed();
+                },
+                failure: function(er) {
+                    self.broadcast('error', "Couldn't update the status: "+er);
+                }
+            });
+        }
+        
+    });
+    
+    // Define ModuleA - this is a module type, not instance
+    Kernel.module.define('ModuleA', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Add handler to buttonA
+            $('#statusButtonA').click(function() {
+                module.hub.refreshStatusFeed();
+            });
+        }
+        
+    });
+    
+    // Define ModuleB - this is a module type, not instance
+    Kernel.module.define('ModuleB', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Add handler to buttonB
+            $('#statusButtonB').click(function() {
+                module.hub.updateStatus($('#status-box').val());
+            });
+        }
+        
+    });
+    
+    // Define ModuleC - this is a module type, not instance
+    Kernel.module.define('ModuleC', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Listen for status-update messages and update count
+            module.hub.listen('status-feed-update', function(data) {
+                $('#status-count').html(data.length);
+            });
+        }
+        
+    });
+    
+    // Define ModuleD - this is a module type, not instance
+    Kernel.module.define('ModuleD', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Listen for status-update messages and update list
+            module.hub.listen('status-feed-update', function(data) {
+                
+                // Clear the list
+                $('#status-list').children().remove();
+                
+                for (var i=0; i<data.length; i+=1) {
+                    $('#status-list').append('<li>'+data[i]+'</li>');
+                }
+                
+            });
+        }
+        
+    });
+    
+    // Define ModuleE - this is a module type, not instance
+    Kernel.module.define('ModuleE', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Listen for status-update messages and update list
+            module.hub.listen('status-update', function(data) {
+                alert('ModuleE says: You updated your status to: \n'+data);
+            });
+        }
+        
+    });
+    
+    // Register the modules (id, type)
+    Kernel.register([
+        {id: 'module-a', type: 'ModuleA'},
+        {id: 'module-b', type: 'ModuleB'},
+        {id: 'module-c', type: 'ModuleC'},
+        {id: 'module-d', type: 'ModuleD'},
+        {id: 'module-e', type: 'ModuleE'}
+    ]);
+
+    // Start the modules after the DOM is ready
+    $('document').ready(function() {
+        
+        Kernel.startAll();
+        
+    });
+    
+    
+</script>
+
+</head>
+<body style='padding: 100px;'>
+    
+    <p><a href='index.html#nav-examples'>Main Page</a></p>
+    
+    In this example we get a little more advanced.  Here we use a custom hub api and we extend Kernel as well.
+    This example also passes objects as messages.  Modules A and B will call the hub api and modules C, D and E
+    will process the results.
+    
+    <br/>
+    <br/>
+    Module A
+    <p style='background: #eee; padding: 10px;'>
+        hub.refreshStatusFeed();  
+        <button id='statusButtonA'>Refresh Status Feed</button>
+    </p>
+    
+    Module B
+    <p style='background: #eee; padding: 10px;'>
+        hub.updateStatus();
+        <input type='text' id='status-box' /><button id='statusButtonB'>Update Status</button>
+    </p>
+    
+    Module C
+    <br/>    
+    Status Count: <span id='status-count'>0</span>
+
+    <br/>   
+    <br/>   
+    Module D
+    <ul id='status-list' style='border: 1px solid #000; padding: 10px;'></ul>
+    
+    
+</body>
+</html>

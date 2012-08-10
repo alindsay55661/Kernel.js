@@ -1,0 +1,244 @@
+body {
+    background: url('../images/background3.png');
+    margin: 0;
+    padding: 0;
+    font-family: 'Droid Serif', Georgia;
+    font-size: 20px;
+    line-height: 1.5em;
+}
+
+a {
+    color: #0260B3;
+    background: rgba(255,255,255,.4);
+    text-decoration: none;
+}
+
+.clear {
+    clear: both;   
+    height: 0;
+}
+
+.site-wrap {
+    text-align: center;
+}
+
+.separator {
+    height: 5px;
+    background: #555;
+    background: #053E4C;
+    background: rgba(0,0,0, .3);
+}
+
+.anchor {
+    height: 1px;
+	display: block;
+	background: transparent;
+}
+
+.top-nav {
+    background: #333;
+    color: #aaa;
+    padding: 5px 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    line-height: .8em;
+    z-index: 100;
+}
+
+.top-nav .content {
+    margin-top: 0;
+    padding-bottom: 0;
+}
+
+.top-nav .content a {
+    color: #555;
+    background: transparent;
+    font-size: 13px;
+    padding-right: 20px;
+}
+
+.content {
+    margin: 30px auto 0px;
+    padding-bottom: 30px;
+    width: 900px;
+    border: 0px solid #f00;
+    text-align: left;
+    position: relative;
+}
+
+.content h1
+{
+    font-family: 'Yanone Kaffeesatz';
+    font-weight: normal;
+    margin: 40px 0 10px 0;
+    font-size: 40px;
+}
+
+.content h2 {
+    font-family: 'Yanone Kaffeesatz';
+    font-weight: normal;
+    margin: 10px 0 10px 0;
+    font-size: 30px;
+}
+
+.header h1 {
+     
+    font-family: 'Lobster';
+    font-size: 60px;
+    margin-top: 70px;
+    padding-bottom: 30px;
+    text-shadow: 0px 1px 1px #000;
+    color: #053E4C;
+    color: #fff;
+    font-weight: normal;
+    line-height: 1.3em;
+}
+
+.twitter-badge {
+    float: right;   
+}
+
+.subhead {
+    position: absolute;
+    color: #0FABD2;
+    font-size: 24px !important;
+    top: 3px;
+    right: 0px;
+    border-radius: 6px;
+    padding: 10px 10px 10px 30px;
+    color: #ccc;
+    background: #053E4C;
+    box-shadow: 0px 1px 2px #0FABD2, 0px -1px 1px #000;
+}
+
+.subhead  a {
+    display: inline-block;
+    background: #7DA21A;
+    background: -webkit-gradient(linear,left top,left bottom,color-stop(0%,#AFE225),color-stop(100%,#7DA21A));
+    background: -moz-linear-gradient(center top , #AFE225 0px, #7DA21A 100%) repeat scroll 0 0 transparent;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#afe225',endColorstr='#7da21a',GradientType=0);
+    font-weight: bold;
+    border: 1px solid #3A4B0C;
+    border-radius: 4px;
+    font-size: 20px;
+    color: #fff;
+    padding: 15px;
+    margin-left: 20px;
+    box-shadow: inset 0 2px 0 0 #DEF67E, 0px 2px 5px rgba(0, 0, 0, .5);
+    cursor: pointer;
+}
+
+.s1 {
+    background: #0a7894 url('../images/background5.png');
+}
+
+.s1 .steps h1 {
+    color: #ccc;   
+}
+.s1 .steps a:hover h1 {
+    color: #fff;   
+}
+
+.s3 {
+    background: #fafafa;
+}
+
+.s4 {
+    background: #0a7894 url('../images/background3.png');
+    background: #0a7894 url('../images/background1.png');
+}
+
+.s5 {
+    background: #fafafa;
+    background: #D5E5EB;
+}
+
+.s6 {
+    background: #0a7894 url('../images/background5.png');
+    color: #ccc;
+}
+
+.s7 {
+    background: #333;
+    color: #ccc;
+}
+
+.s7 a {
+    color: #fff;    
+}
+
+.qa {
+    display: block;   
+}
+
+.steps {
+    text-align: center;
+    margin-left: 12px;
+}
+
+.steps a {
+    display: block;
+    text-align: center;
+    width: 165px;
+    border: 5px solid transparent;
+    padding-bottom: 20px;
+    border-radius: 10px;
+    float: left;
+    background: transparent;
+    color: #053E4C;
+}
+
+.steps a:hover {
+    color: #0260B3;
+    border: 5px solid rgba(0,0,0,.1);
+    background: rgba(255,255,255,.4);
+    cursor: pointer;
+}
+
+.steps h1
+{
+    margin: 10px 0;
+    font-size: 30px;
+    color: #333;
+}
+
+
+#architecture-diagram
+{
+    position: relative;
+    margin: 40px 0px 60px 0;
+}
+
+#architecture-diagram .label-modules
+{
+    position: absolute;
+    top: 45px;
+    right: 0;
+    width: 440px;
+}
+
+#architecture-diagram .label-hub
+{
+    position: absolute;
+    top: 155px;
+    right: 0;
+    width: 440px;
+}
+
+#architecture-diagram .label-kernel
+{
+    position: absolute;
+    top: 245px;
+    right: 0;
+    width: 440px;
+}
+
+#architecture-diagram .label-base
+{
+    position: absolute;
+    top: 340px;
+    right: 0;
+    width: 440px;
+}

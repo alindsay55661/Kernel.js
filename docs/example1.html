@@ -1,0 +1,76 @@
+<html>
+<head>
+<script src='../kernel.min.js'></script>
+<script>
+    
+    // Define ModuleA - this is a module type, not instance
+    Kernel.module.define('ModuleA', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Add handler to the button
+            var button = document.getElementById('updateButton');
+                button.addEventListener('click', function() {
+                    module.hub.broadcast('update-status', 'Working on Kernel.js');
+                }, false);
+            
+            // Listen for status update messages
+            module.hub.listen('update-status', function(data) {
+                alert('ModuleA recieved update-status event: '+data);
+            });
+            
+            // Listen for processed updates
+            module.hub.listen('processed-status-update', function(data) {
+                alert('ModuleA recieved processed-status-update event: '+data);
+            });
+        }
+        
+    });
+    
+    // Define ModuleB - this is a module type, not instance
+    Kernel.module.define('ModuleB', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Listen for status update messages
+            module.hub.listen('update-status', function(data) {
+                alert('ModuleB recieved update-status event: '+data);
+                alert('ModuleB sending notification of processed-status-update event');
+                
+                // [Process the status update...]
+                
+                // Send a notification that the status update was processed
+                module.hub.broadcast('processed-status-update', 'PROCESSED: '+data);
+                
+            });
+        }
+        
+    });
+    
+    // Register the modules (id, type)
+    Kernel.register('module-a', 'ModuleA');
+    Kernel.register('module-b', 'ModuleB');
+    
+</script>
+
+</head>
+<body style='padding: 100px;'>
+    
+	<p><a href='index.html#nav-examples'>Main Page</a></p>
+	
+	<button id='updateButton'>Update Status</button>
+	
+</body>
+</html>
+
+<script>
+    
+    // Start the modules after the DOM is ready
+    Kernel.start('module-a');
+    Kernel.start('module-b');
+    
+</script>

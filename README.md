@@ -7,3 +7,11 @@ Kernel.js was inspired by Nicholas Zakas's talk on scalable Javascript archictur
 
 
 For examples and docs check out: [http://alanlindsay.me/kerneljs](http://alanlindsay.me/kerneljs)
+
+OR
+
+[docs](docs/index.html)
+
+    
+    
+    

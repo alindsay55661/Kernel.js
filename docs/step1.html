@@ -1,0 +1,94 @@
+<html>
+<head>
+
+<link href="css/prism.css" rel="stylesheet" />
+<script src="../lib/prism.js"></script>
+
+</head>
+<body style='padding: 100px;'>
+
+    <p><a href='index.html#nav-get-started'>Main Page</a></p>
+    
+    <h1>Step 1: Extend Kernel.</h1>
+    
+    <p>
+        The Kernel object is the core of your application.  Its repsonsible for the module lifecycle.
+        You should extend it to provide additional functionality to your application.  Below are some examples
+        of how you might extend Kernel.  Check out the <a href='api.html'>api doc</a> for details.
+    </p>
+    
+    Override onStart and onStop.  NOTE: instance.init() and instance.kill() must be called explicitly 
+    when overriding these methods.
+    
+<pre><code class="language-javascript">
+Kernel.extend(Kernel, {
+
+    onStart: function(instance) {
+    
+        if (instance.renderTo) {
+            this.render(instance);
+        }
+        else instance.init();
+    },
+    
+    onStop: function(instance) {
+    
+        if (instance.renderTo) {
+            this.unRender(instance);
+        }
+        else instance.kill();
+    },
+    
+    render: function(instance) {
+        // Render to instance.renderTo
+        ....
+        // Start the module
+        instance.init();
+    },
+    
+    unRender: function(instance) {
+        // UnRender from instance.renderTo (fade out, etc.)
+        ....
+        // Kill the module
+        instance.kill();
+    }
+});
+</code></pre>
+    
+    Add Ajax support.
+    
+<pre><code class="language-javascript">
+Kernel.extend(Kernel, {
+
+    doAjax: function(config) {
+        $.ajax({
+            url: 'ajax.php',
+            type: config.type || 'GET',
+            data: config.params || {},
+            dataType: config.dataType,
+            success: config.success,
+            error: function(jqXHR, textStatus, errorThrown) {
+                if (config.failure) {
+                    config.failure('Ajax call failed.');
+                }
+            }
+        });
+    }
+});
+
+// available from the hub as
+Kernel.doAjax({
+    success: function(data) {
+        ...
+    }
+    failure: function(er) {
+        ...
+    }
+});
+</code></pre>
+    
+    
+    
+</body>
+</html>
+

@@ -1,0 +1,419 @@
+<html>
+<head>
+
+<link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:light,regular' rel='stylesheet' type='text/css'>
+<link href='css/site.css' rel='stylesheet' type='text/css'>
+<link href="css/prism.css" rel="stylesheet" />
+<script src="../lib/prism.js"></script>
+
+<style>
+    
+body {
+    background: #fff;   
+    position: relative;
+    margin-left: 220px;
+    padding: 100px;
+}
+
+.nav {
+    position: fixed;
+    top: 100px;
+    left: 20px;
+    width: 250px;
+}
+
+h2
+{
+    font-family: 'Yanone Kaffeesatz';
+    border-bottom: 0px solid #ccc;
+    margin-top: 2em;
+}
+
+</style>
+
+</head>
+<body>
+    
+    <div class='nav'>
+        <a href='#kernel-extend'>Kernel.extend</a><br/>
+        <a href='#kernel-decoratemethods'>Kernel.decorateMethods</a><br/>
+        <a href='#kernel-decoratemethod'>Kernel.decorateMethod</a><br/>
+        <a href='#kernel-onstart'>Kernel.onStart</a><br/>
+        <a href='#kernel-onstop'>Kernel.onStop</a><br/>
+        <a href='#kernel-register'>Kernel.register</a><br/>
+        <a href='#kernel-start'>Kernel.start</a><br/>
+        <a href='#kernel-stop'>Kernel.stop</a><br/>
+        <a href='#kernel-unregister'>Kernel.unregister</a><br/>
+        
+        <p>
+            <a href='#hub-define'>Kernel.hub.define</a><br/>
+            <a href='#hub-get'>Kernel.hub.get</a><br/>
+        </p>
+        
+        <p>
+            <a href='#module-define'>Kernel.module.define</a><br/>
+            <a href='#module-get'>Kernel.module.get</a><br/>
+            <a href='#module-getdefinition'>Kernel.module.getDefinition</a><br/>
+            <a href='#module-isstarted'>Kernel.module.isStarted</a><br/>
+        </p>
+        
+        <p>
+            <strong>Hub instance methods</strong><br/>
+            <a href='#hub-authorize'>hub.authorize</a><br/>
+            <a href='#hub-listen'>hub.listen</a><br/>
+            <a href='#hub-broadcast'>hub.broadcast</a><br/>
+        </p>
+    </div>
+    
+<h1>Kernel.js API</h1>
+    
+<a name='kernel-extend'></a>
+<h2>Kernel.extend(obj1, obj2, [deep])</h2>
+
+Extends obj1 with obj2. If the deep parameter is supplied it will merge the objects
+recursively. This is how you define Kernel and hub extensions for use in your application.
+Extensions are object literals. The core Kernel methods cannot be overwritten but you 
+can overwrite your own extenstions without warning.
+
+<pre><code class="language-javascript">
+Kernel.extend(Kernel, {
+    // Define your extension
+    
+    doAjax: function(config) {
+        ....
+    }
+});
+
+// Now available as
+Kernel.doAjax({...});
+</code></pre>
+
+<a name='kernel-decoratemethods'></a>
+<h2>Kernel.decorateMethods(obj)</h2>
+
+This accepts one of three objects: Kernel, a hub, or a module. It then cycles through all the
+methods of that object and calls Kernel.decorateMethod on each one. This is generally not needed
+because most methods are automatically decorated. However, it is useful when you namespace
+the hub and need to decorate methods within a namespace.
+
+<pre><code class="language-javascript">
+Kernel.extend(Kernel.hub.get('main'), {
+
+    // namespace
+    users: {
+        // This method is not automatically decorated
+        get: function() { ... }        
+    },
+    
+    // This method IS automatically decorated
+    fn: function() { ... }
+}, true);
+
+// Decorate the 'users' namespace methods
+Kernel.decorateMethods(Kernel.hub.get('main').users);
+</code></pre>
+
+<a name='kernel-decoratemethod'></a>
+<h2>Kernel.decorateMethod(obj, name, method)</h2>
+
+Decorates the method of obj. By default this merely binds the method to the obj scope
+so that when invoked it is always in the scope of obj. However, you can override 
+this method to do whatever you want, including nothing. Note that this method is called
+automatically for all Kernel, hub and module methods. You generally will not call
+this method yourself, use Kernel.decorateMethods instead.
+
+<pre><code class="language-javascript">
+// Here is an example of overriding this method
+Kernel.extend(Kernel, {
+    decorateMethod: function(obj, name, method) {
+    
+        return function() {
+            // Wrap everything in a try catch for global error handling
+            try {
+              // Bind instance methods
+              return method.apply(instance, arguments);
+            }
+            catch (e) {
+              console.error('Error for method: '+obj.id+'.'+name);
+              console.error(e);
+            }
+        };
+    }
+});
+
+</code></pre>
+
+<a name='kernel-onstart'></a>
+<h2>Kernel.onStart(moduleInstance)</h2>
+
+This method is called when Kernel.start() is called.  It allows you to hijack the module
+initialization process. This method is meant to be overridden in Kernel.extend().  NOTE:
+because the module initialization process gets hijacked here you must explicitly call
+instance.init() before leaving the function otherwise your module will not initialize.
+This method should not be called directly.
+
+<pre><code class="language-javascript">
+// not called directly, only called internally by Kernel
+Kernel.extend({
+    onStart: function(instance) {
+        // Do some stuff
+        
+        // Initialize the module
+        instance.init();
+    }
+});
+</code></pre>
+
+<a name='kernel-onstop'></a>
+<h2>Kernel.onStop(moduleInstance)</h2>
+
+This method is called when Kernel.stop() is called.  It allows you to hijack the module
+destruction process. This method is meant to be overridden in Kernel.extend().  NOTE:
+because the module destruction process gets hijacked here you must explicitly call
+instance.kill() before leaving the function otherwise your module will not destroy properly.
+This method should not be called directly.
+
+<pre><code class="language-javascript">
+// not called directly, only called internally by Kernel
+Kernel.extend({
+    onStop: function(instance) {
+        // Do some stuff 
+        
+        // Kill the module
+        instance.kill();
+    }
+});
+</code></pre>
+
+<a name='kernel-register'></a>
+<h2>Kernel.register(moduleId, moduleType, [hubName], [config]) OR Kernel.register([Array of registration objects])</h2>
+
+Registers a module for use in your application. Modules must be registered before
+they can be used. They only need to be registered once. If a hub isn't specified 
+the default hub 'main' will be used.
+                
+<pre><code class="language-javascript">
+Kernel.register('module-count1', 'StatusCount');
+Kernel.register('module-count2', 'StatusCount', 'myHub');
+
+Kernel.register([
+    {id: 'module-count1', type: 'StatusCount', config: { ... }},
+    {id: 'module-count2', type: 'StatusCount', hub: 'myHub', config: { ... }}
+]);
+</code></pre>
+
+<a name='kernel-start'></a>
+<h2>Kernel.start(moduleId, [config])</h2>
+
+Starts the module instance. This will also call the init() method of your module instance.
+The config object gets merged with the module instance and can be used to override
+methods and properties specified in the module definition.
+
+<pre><code class="language-javascript">
+// Assume this definition
+Kernel.module.define('Count', {
+    offset: 1,
+    init: function() { alert(this.offset); }
+})
+
+// Register
+Kernel.register('module-count1', 'Count');
+
+// Change module instance on start
+Kernel.start('module-count1', {offset: 5}); // alerts '5'
+
+</code></pre>
+
+<a name='kernel-stop'></a>
+<h2>Kernel.stop(moduleId)</h2>
+
+Stops the module instance.  This will also call the kill() method of your module instance.
+Once stopped the instance will be set to null however the module will still be
+registered and available to start again.
+
+<pre><code class="language-javascript">
+// Assume this definition
+Kernel.module.define('Count', {
+    offset: 1,
+    init: function() { alert(this.offset); },
+    kill: function() {  
+        // Empty stuff from memory
+    }
+})
+
+// Register
+Kernel.register('module-count1', 'Count');
+Kernel.start('module-count1');
+
+// Automatically calls the kill method
+Kernel.stop('module-count1');
+
+Kernel.module.get('module-count1'); // null;
+
+// But you can start it up again
+Kernel.start('module-count1');
+</code></pre>
+
+<a name='kernel-unregister'></a>
+<h2>Kernel.unregister(moduleId)</h2>
+
+Unregisters a module instance. This will automatically stop the module if it isn't already stopped.
+                
+<pre><code class="language-javascript">
+Kernel.unregister('module-count1');
+</code></pre>
+
+<a name='hub-define'></a>
+<h2>Kernel.hub.define(hubName, hubDefinition)</h2>
+
+Defines a hub for use in your application. Hub instances are object literals.
+'main' is the default hub used when registering modules. Overriding 'listen' 
+and 'broadcast' in your definition will have no effect.
+
+<pre><code class="language-javascript">
+Kernel.hub.define('main', {
+    // Define your hub api
+    
+    updateStatus: function(status) {
+        ....
+    }
+});
+
+// Now available within a module defnition as
+this.hub.updateStatus('My Status Update');
+</code></pre>
+
+<a name='hub-get'></a>
+<h2>Kernel.hub.get(hubName)</h2>
+
+Returns the hub instance or null if no instance exists.
+
+<pre><code class="language-javascript">
+var hub = Kernel.hub.get('main');
+</code></pre>
+
+<a name='module-define'></a>
+<h2>Kernel.module.define(moduleType, moduleDefinition)</h2>
+
+Defines a module for use in your application. Module instances are object literals.
+You MUST define an 'init' method.
+
+<pre><code class="language-javascript">
+Kernel.module.define('StatusCount', {
+    
+    // Define some members
+    foo: 'bar',
+    baz: 400,
+    
+    // This method is required
+    init: function() {  
+    
+        // Access to hub
+        this.hub.listen('sweet-event', function(data) {
+            // Do something aweseome with data        
+        });
+    
+    },
+    
+    // You can have others...
+    doIt: function(what) {
+        alert('Do '+what+'!');
+    }
+});
+</code></pre>
+
+<a name='module-get'></a>
+<h2>Kernel.module.get(moduleId)</h2>
+
+Returns the module instance or null if no instance exists. This should not be invoked
+from within a module.
+
+<pre><code class="language-javascript">
+var instance = Kernel.module.get('module-count1');
+</code></pre>
+
+<a name='module-getdefinition'></a>
+<h2>Kernel.module.getDefinition(moduleId)</h2>
+
+Returns the module definition or null if no definition exists. 
+
+<pre><code class="language-javascript">
+var def = Kernel.module.getDefinition('module-count1');
+</code></pre>
+
+<a name='module-isstarted'></a>
+<h2>Kernel.module.isStarted(moduleId)</h2>
+
+Returns true if the module is started, otherwise false. This is helpful when writing
+Kernel or hub extensions.
+
+<pre><code class="language-javascript">
+// Example toggle extension
+Kernel.extend(Kernel, {
+
+    toggleModule: function(moduleId) {
+        if (Kernel.module.isStarted(moduleId)) Kernel.stop(moduleId);
+        else Kernel.start(moduleId);
+    }
+
+});
+</code></pre>
+
+
+<a name='hub-authorize'></a>
+<h2>hub.authorize(type, moduleId)</h2>
+
+This method is automatically called each time a module tries to listen to an event via
+hub.listen. By default it returns true for every module but you can override it to
+check against specific module instances or types and prevent those modules from
+listening to specific broadcasts.
+
+<pre><code class="language-javascript">
+// Override the authorize method
+Kernel.extend(Kernel.hub.get('main'), {
+    
+    authorize: function(type, moduleId) {
+        // Cross reference moduleId against auth map
+        if (good) return true
+        return false;
+    }
+});
+
+</code></pre>
+
+<a name='hub-listen'></a>
+<h2>Kernel.hub.listen(messageType or Array of messageTypes, messageHandler)</h2>
+
+Listens for a specific message and handles it.  The handler accepts a single data parameter
+which may be empty if the broadcast contains no data.
+
+<pre><code class="language-javascript">
+// Within module definition        
+....
+this.hub.listen('status-update', function(data) {
+    // Do something with data
+});
+....
+</code></pre>
+
+<a name='hub-broadcast'></a>
+<h2>Kernel.hub.broadcast(messageType, [message])</h2>
+
+Broadcasts a message with an optional payload. Any listeners will receive the
+broadcast. The data can be any valid javascript data type.
+
+<pre><code class="language-javascript">
+// Within module definition
+....
+this.hub.broadcast('status-update', {
+        date: new Date(),
+        status: 'My status'
+    }
+});
+....
+</code></pre>
+
+</body>
+</html>
+

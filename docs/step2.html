@@ -1,0 +1,58 @@
+<html>
+<head>
+
+<link href="css/prism.css" rel="stylesheet" />
+<script src="../lib/prism.js"></script>
+
+</head>
+<body style='padding: 100px;'>
+    
+    <p><a href='index.html#nav-get-started'>Main Page</a></p>
+    
+    <h1>Step 2: Define Hubs.</h1>
+    
+    <p>
+        Hubs provide a stable api for your modules to use.  You may have one or more hubs.  A module 
+        can only be registered to use one hub and will only have access to the api of that hub.  Modules
+        on one hub can listen for messages broadcasted by another hub.  There is a built-in default
+        hub called 'main'.  If you only need one hub just define 'main'.  Check out the <a href='api.html'>api doc</a> for details.
+    </p>
+    
+    Define the main hub.
+    
+<pre><code class="language-javascript">
+Kernel.hub.define('main' {
+    
+    updateStatus: function(status) {
+        
+        var self = this;
+        
+        Kernel.doAjax({
+            type: 'POST',
+            params: { newstatus: status },
+            success: function(data) {
+                
+                // Let everyone know that you updated your status
+                self.notify({
+                    type: 'status-update',
+                    data: status
+                })
+            },
+            failure: function(er) {
+                self.notify({
+                    type: 'error',
+                    data: "Couldn't update the status: "+er
+                });
+            }
+        });
+    }
+});
+
+// available from a module definition as
+module.hub.updateStatus('Building my new app on Kernel.js');
+</code></pre>
+    
+    
+</body>
+</html>
+

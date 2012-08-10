@@ -1,0 +1,126 @@
+<html>
+<head>
+<script src='../kernel.min.js'></script>
+<script>
+    
+    // Define the main Hub - NOTE: 'main' is the default hub used if not otherwise specified in Kernel.start()
+    Kernel.hub.define('main', {
+        
+        updateStatus: function(status) {
+            this.broadcast('update-status', status);
+        }
+        
+    });
+    
+    // Define ModuleA - this is a module type, not instance
+    Kernel.module.define('ModuleA', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Add handler to buttonA
+            var button = document.getElementById('updateButtonA');
+            button.addEventListener('click', function() {
+                
+                // Use the hub api
+                module.hub.updateStatus('Status updated to A');
+                
+            }, false);
+            
+            // Listen for processed updates
+            module.hub.listen('processed-status-update', function(data) {
+                alert('ModuleA recieved processed-status-update message: \n"'+data+'"\n');
+            });
+        }
+        
+    });
+    
+    // Define ModuleB - this is a module type, not instance
+    Kernel.module.define('ModuleB', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Add handler to buttonB
+            var button = document.getElementById('updateButtonB');
+            button.addEventListener('click', function() {
+                
+                // Use the hub api
+                module.hub.updateStatus('Status updated to B');
+                
+            }, false);
+                
+            // Listen for status update messages
+            module.hub.listen('update-status', function(data) {
+                alert('ModuleB recieved update-status message: \n"'+data+'"\n processing now...');
+                
+                // [Process the status update...]
+                
+                // Send a notification that the status update was processed
+                module.hub.broadcast('processed-status-update', 'PROCESSED BY B: '+data);
+                
+            });
+        }
+        
+    });
+    
+    // Define ModuleC - this is a module type, not instance
+    Kernel.module.define('ModuleC', {
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Listen for status update messages
+            module.hub.listen('update-status', function(data) {
+                alert('ModuleC recieved update-status message: \n"'+data+'"\n processing now...');
+                
+                // [Process the status update...]
+                
+                // Send a notification that the status update was processed
+                module.hub.broadcast('processed-status-update', 'PROCESSED BY C: '+data);
+                
+            });
+        }
+        
+    });
+    
+    // Register the modules (id, type)
+    Kernel.register([
+        {id: 'module-a', type: 'ModuleA'},
+        {id: 'module-b', type: 'ModuleB'},
+        {id: 'module-c', type: 'ModuleC'}
+    ]);
+    
+</script>
+
+</head>
+<body style='padding: 100px;'>
+    
+    <p><a href='index.html#nav-examples'>Main Page</a></p>
+    
+    This example uses a custom hub api to update the status.  Hub apis make common tasks available to all modules
+    that use the hub.  In this example modules B and C revieve and process the status updates.
+    
+    <p style='background: #eee; padding: 10px;'>
+        hub.updateStatus('Status updated via the hub api');
+    </p>
+    
+    <button id='updateButtonA'>Update Status from Module A</button>
+    <button id='updateButtonB'>Update Status from Module B</button>
+    
+</body>
+</html>
+
+<script>
+    
+    // Start the modules after the DOM is ready
+    Kernel.start([
+        {id: 'module-a'},
+        {id: 'module-b'},
+        {id: 'module-c'}
+    ]);
+    
+</script>

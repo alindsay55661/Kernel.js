@@ -1,0 +1,275 @@
+
+<html>
+<head>
+    
+<style>
+    
+.portlet {
+    width: 200px;
+    float: left;
+    border: 10px solid #ddd;
+    margin-right: 10px;
+}
+
+.portlet .title {
+    background: #555;
+    color: #fff;
+    padding: 5px;
+    margin: -10px -10px 0 -10px;
+}    
+
+.clear {
+    clear: both;
+}
+
+</style>
+    
+<script src='../kernel.min.js'></script>
+<script src='../lib/jquery-1.7.2.js'></script>
+<script>
+
+    // ---------------------------------------------------------------------------------------------
+    // NOTE: When your application gets this big you should break everything into separate files.
+    // ex. kernel-extension.js, main-hub.js, moduleA.js, moduleB.js, moduleC.js, moduleD.js, etc.
+    // ---------------------------------------------------------------------------------------------
+    
+    // Extend Kernel to support ajax - we're using jQuery as the base library
+    Kernel.extend(Kernel, {
+        
+        doREST: function(config) {
+            config.dataType = 'json';
+            this.doAjax(config);
+        },
+        
+        doAjax: function(config) {
+            $.ajax({
+                url: 'ajax.php/'+config.url,
+                type: config.type,
+                data: config.params,
+                dataType: config.dataType,
+                success: config.success,
+                error: function(jqXHR, textStatus, errorThrown) {
+                    if (config.failure) {
+                        config.failure('Ajax call failed.');
+                    }
+                }
+            });
+        },
+        
+        render: function(instance) {
+            if (instance.portlet) {
+                this.renderPortlet(instance)
+            }
+            else {
+                this.renderModule(instance)
+            }
+        },
+        
+        renderPortlet: function(instance) {
+            // Wrap the module in a portlet
+            $.get('modules/'+instance.file, function(data) {
+                $(instance.renderTo).prepend("<div class='portlet' id='"+instance.id+"'><div class='title'>"+instance.title+"</div>"+data+"</div>");
+                
+                // Save reference to module element for later
+                instance.$moduleEl = $('#'+instance.id);
+                
+                // Make sure to finally call init()
+                instance.init();
+            });
+        },
+        
+        renderModule: function(instance) {
+            $.get('modules/'+instance.file, function(data) {
+                $(instance.renderTo).html(data);
+                
+                // Save reference to module element for later
+                instance.$moduleEl = $(instance.renderTo);
+                
+                // Make sure to finally call init()
+                instance.init();
+            });
+        },
+
+        // Highjacking the startup gives you control over when module.init() gets called
+        onStart: function(instance) {
+            if (instance.file) {
+                this.render(instance);
+            }
+            else {
+                instance.init();
+            }
+        },
+        
+        onStop: function(instance) {
+            
+            // Allow module to handle its own shutdown first
+            instance.kill();
+            
+            // Take care of any rendered elements
+            var el = instance.$moduleEl;
+        
+            if (el) {
+                el.fadeOut(500, function()
+                {
+                    el.remove();
+                });
+            }
+        }
+    });
+    
+    // Define the main Hub - NOTE: 'main' is the default hub used if not otherwise specified in Kernel.start()
+    Kernel.hub.define('main', {
+        
+        refreshStatusFeed: function() {
+            
+            var self = this;
+            
+            Kernel.doREST({
+                type: 'GET',
+                url: 'feed',
+                success: function(data) {
+                    self.broadcast('status-feed-update', data);
+                },
+                failure: function(er) {
+                    
+                    // NOTE: No module in this example listens for error messages to errors will go unnoticed
+                    self.broadcast('error', "Couldn't fetch the feed: "+er);
+                }
+            });
+        },
+        
+        updateStatus: function(status) {
+            
+            var self = this;
+            
+            Kernel.doREST({
+                type: 'POST',
+                url: 'status',
+                params: { newstatus: status },
+                success: function(data) {
+                    
+                    // Let everyone know that you updated your status
+                    self.broadcast('status-update', status);
+                    
+                    // Also update the feed
+                    self.refreshStatusFeed();
+                },
+                failure: function(er) {
+                    self.broadcast('error', "Couldn't update the status: "+er);
+                }
+            });
+        }
+        
+    });
+    
+    Kernel.module.define('StatusBox', {
+        
+        file: 'update-box.html',
+        
+        init: function() {
+            
+            var module = this;
+            
+            // Add handler to buttonB
+            $('#update-button').click(function() {
+                module.hub.updateStatus($('#status-box').val());
+            });
+        }
+        
+    });
+    
+    Kernel.module.define('StatusCount', {
+
+        file: 'status-count.html',
+        title: 'STATUS COUNT',
+        portlet: true,
+
+        init: function() {
+            
+            var self = this;
+            
+            // Listen for status-update messages and update count
+            self.hub.listen('status-feed-update', function(data) {
+                self.$moduleEl.find('.status-count').html(data.length);
+            });
+        }
+        
+    });
+    
+    Kernel.module.define('StatusList', {
+
+        file: 'status-list.html',
+        title: 'STATUS LIST',
+        portlet: true,
+        
+        init: function() {
+            
+            var self = this;
+            
+            // Listen for status-update messages and update list
+            self.hub.listen('status-feed-update', function(data) {
+                
+                // Clear the list
+                self.$moduleEl.find('.status-list').children().remove();
+                
+                for (var i=0; i<data.length; i+=1) {
+                    self.$moduleEl.find('.status-list').append('<li>'+data[i]+'</li>');
+                }
+                
+            });
+        }
+        
+    });
+    
+    
+    // Register the modules (id, type)
+    Kernel.register([
+        {id: 'module-box', type: 'StatusBox', config: {renderTo: '#top'}},
+        {id: 'module-count1', type: 'StatusCount', config: {renderTo: '#center'}},
+        {id: 'module-count2', type: 'StatusCount', config: {renderTo: '#bottom'}},
+        {id: 'module-list1', type: 'StatusList', config: {renderTo: '#center'}},
+        {id: 'module-list2', type: 'StatusList', config: {renderTo: '#bottom'}}
+    ]);
+
+    // Start the modules after the DOM is ready
+    $('document').ready(function() {
+        
+        Kernel.start([
+           {id: 'module-box'},
+           {id: 'module-count1'},
+           {id: 'module-count2', config: {title: 'Title OVERRIDE'}},
+           {id: 'module-list1'},
+           {id: 'module-list2', config: {title: 'Title OVERRIDE 2'}} 
+        ]);
+        
+    });
+    
+    
+</script>
+
+</head>
+<body style='padding: 100px;'>
+    
+    <p><a href='index.html#nav-examples'>Main Page</a></p>
+    
+    In this example we show one possible way to render modules.  There are unlimited ways to do this so don't worry
+    if this doesn't make sense for your application.  Rendering isn't built into Kernel.js, we've done it here with
+    a few simple extensions.
+    
+    First, we move the contents of the modules into .html files.  Then we extend Kernel to load them in via ajax.  
+    We also assign a few special properties to the modules and override the defaults on the modules that render
+    in the bottom div.
+    
+    Finally, we create two types of rendering.  One type replaces an element's contents with the contents of the module file (top div).
+    The other type wraps the module contents with a border and creates a header bar with the module title (bottom two divs).
+    
+    You'll also notice that we've rendered more than one instance of a module, you can do as many as you like.
+
+    <br/>
+    <br/>
+    <div id='top' style='border: 5px solid #f00; padding: 10px;'></div>
+    <div id='center' style='border: 5px solid #0f0; padding: 10px;'><br class='clear'/></div>
+    <div id='bottom' style='border: 5px solid #00f; padding: 10px;'><br class='clear'/></div>
+    
+</body>
+</html>

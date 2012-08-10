@@ -1,0 +1,91 @@
+<html>
+<head>
+
+<link href="css/prism.css" rel="stylesheet" />
+<script src="../lib/prism.js"></script>
+
+</head>
+<body style='padding: 100px;'>
+    
+    <p><a href='index.html#nav-get-started'>Main Page</a></p>
+    
+    <h1>Step 3: Define Modules.</h1>
+    
+    <p>
+        Modules are the logical self contained units of your application.  They can be invisible blocks of code that
+        execute behind the scenes or they can be page elements.  The important thing to remember is that modules
+        don't know about each other or about Kernel, they only know about the hub they are attached to.
+        Modules are required to implement an init() method.  Check out the <a href='api.html'>api doc</a> for details.
+    </p>
+    
+    Example 1: Module that renders a status update box
+    
+<pre><code class="language-javascript">
+Kernel.module.define('StatusBox', {
+    
+    file: 'update-box.html',
+    renderTo: '#placeholder',
+    
+    init: function() {
+        
+        var self = this;
+        
+        // Add handler to button
+        $('#update-button').click(function() {
+            self.hub.updateStatus($('#status-box').val());
+        });
+    }
+    
+});
+</code></pre>
+    
+    Example 2: Module that fetches data every n seconds (only when the last fetch was successful)
+    
+<pre><code class="language-javascript">
+Kernel.module.define('DataFetch', {
+    
+    interval: 5000,
+    
+    fetchData: function() {
+        
+        var self = this;
+    
+        self.hub.fetchData({
+            success: function(data) {
+                self.hub.notify({
+                    type: 'data-fetch',
+                    data: data
+                });
+                
+                setTimeout(fetchData, self.interval);
+            }
+        });
+    },
+    
+    init: function() {
+        
+        this.fetchData();
+    }
+    
+});
+</code></pre>
+    
+    Example 3: Module that listens for messages
+    
+<pre><code class="language-javascript">
+Kernel.module.define('Listener', {
+    
+    init: function() {
+        
+        var self = this;
+        
+        self.hub.listen(['status-update', 'status-delete'], function(data) {
+            // Do something with data
+        });
+    }
+    
+});
+</code></pre>
+
+</body>
+</html>
