@@ -1,0 +1,19 @@
+{
+  "name": "Kernel.js",
+  "homepage": "https://github.com/alindsay55661/Kernel.js",
+  "authors": [
+    "(Alan Lindsay <alan@enleap.com>)"
+  ],
+  "description": "Kernel.js is an ultra lightweight (~4k) architecture for building scalable javascript applications.",
+  "main": "kernel.js",
+  "ignore": [
+    "docs",
+    "examples",
+    "hub-extensions",
+    "lib"
+  ],
+  "moduleType": [
+    "globals"
+  ],
+  "license": "MIT"
+}
