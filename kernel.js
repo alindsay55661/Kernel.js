@@ -538,10 +538,8 @@
       for (key in listeners) {
 
         // Cycle through each type
-        for (i=0,size=listeners[key].length; i<size; i+=1) {
-
+        for (i=listeners[key].length-1; i>=0; i-=1) {
           listener = listeners[key][i];
-
           if (listener.id === id) listeners[key].splice(i, 1);
         }
       }
