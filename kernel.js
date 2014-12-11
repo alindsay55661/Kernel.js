@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2012 Alan Lindsay - version 2.7.5
+ Copyright (c) 2012 Alan Lindsay - version 2.7.6
 
  Permission is hereby granted, free of charge, to any person obtaining
  a copy of this software and associated documentation files (the
@@ -550,7 +550,7 @@
     onStop: function(instance) {
       instance.kill();
     },
-    version: '2.7.5',
+    version: '2.7.6',
     _internals: {
       PRIVATE: 'FOR DEBUGGING ONLY',
       type: 'Kernel',
