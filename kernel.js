@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2012 Alan Lindsay - version 2.7.5
+ Copyright (c) 2012 Alan Lindsay - version 2.7.6
 
  Permission is hereby granted, free of charge, to any person obtaining
  a copy of this software and associated documentation files (the
@@ -538,10 +538,8 @@
       for (key in listeners) {
 
         // Cycle through each type
-        for (i=0,size=listeners[key].length; i<size; i+=1) {
-
+        for (i=listeners[key].length-1; i>=0; i-=1) {
           listener = listeners[key][i];
-
           if (listener.id === id) listeners[key].splice(i, 1);
         }
       }
@@ -552,7 +550,7 @@
     onStop: function(instance) {
       instance.kill();
     },
-    version: '2.7.5',
+    version: '2.7.6',
     _internals: {
       PRIVATE: 'FOR DEBUGGING ONLY',
       type: 'Kernel',
